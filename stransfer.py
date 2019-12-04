@@ -10,7 +10,7 @@ print("TensorFlow Hub version:", hub.__version__)
 
 content_img = imageio.imread('data/content/chicago.jpg')
 
-model = VGG16(include_top=True, weights='imagenet')
+""" model = VGG16(include_top=True, weights='imagenet')
 print(model.summary())
 content_prep = tf.keras.applications.vgg16.preprocess_input(content_img)
 content_prep = tf.image.resize(content_prep, size=(224,224))
@@ -21,3 +21,14 @@ print(pred)
 
 for layer in model.layers:
   print(layer.name, ":", type(layer))
+ """
+
+ # Content layers to get content feature maps
+content_layers = ['block4_conv2'] 
+
+# Style layers of interest
+style_layers = ['block1_conv1',
+                'block2_conv1',
+                'block3_conv1', 
+                'block4_conv1', 
+                'block5_conv1']
