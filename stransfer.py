@@ -42,6 +42,23 @@ def create_feature_extractor(layer_names):
 
   return model
 
+def compute_gram_matrix(layer_features):
+
+  # get the batch_size, depth, height, and width of the Tensor
+  b, h, w, d = layer_features.shape
+
+  assert b==1, "The function expects features extracted from a single image."
+
+  # reshape so we're multiplying the features for each channel
+  #tensor = tensor.view(d, h * w)
+  tensor = tf.reshape(layer_features, [h*w, d])
+  
+  # calculate the gram matrix
+  gram = tf.matmul(tf.transpose(tensor), tensor)
+  #gram = torch.mm(tensor, tensor.t())
+
+  return gram
+
 
 layers_of_interest = content_layers + style_layers
 feature_extractor = create_feature_extractor(layers_of_interest)
@@ -69,11 +86,16 @@ content_features = content_features[:len(content_layers)]
 
 style_features = feature_extractor(style_prep)
 style_features = style_features[len(content_layers):]
-#content_features = get_features(content_prep, feature_extractor)
-#style_features = get_features(style_prep, feature_extractor)
+
 
 # calculate the gram matrices for each layer of our style representation
 #style_grams = {layer: gram_matrix(style_features[layer]) for layer in style_features}
+style_targets = { layer_name: compute_gram_matrix(style_layer_feat) for 
+                  layer_name, style_layer_feat in zip(style_layers, style_features)} 
+
+for style_target_name, style_target_gram in style_targets.items():
+  print(style_target_name)
+  print(style_target_gram.shape)
 
 # create a third "target" image and prep it for change
 # it is a good idea to start off with the target as a copy of our *content* image
