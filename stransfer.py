@@ -10,18 +10,6 @@ print("TensorFlow Hub version:", hub.__version__)
 
 content_img = imageio.imread('data/content/chicago.jpg')
 
-""" model = VGG16(include_top=True, weights='imagenet')
-print(model.summary())
-content_prep = tf.keras.applications.vgg16.preprocess_input(content_img)
-content_prep = tf.image.resize(content_prep, size=(224,224))
-content_prep = content_prep[tf.newaxis, :] # expand dims
-prob = model(content_prep)
-pred = tf.keras.applications.vgg16.decode_predictions(prob.numpy(), top=3)
-print(pred)
-
-for layer in model.layers:
-  print(layer.name, ":", type(layer))
- """
 
  # Content layers to get content feature maps
 content_layers = ['block4_conv2'] 
@@ -33,6 +21,12 @@ style_layers = ['block1_conv1',
                 'block4_conv1', 
                 'block5_conv1']
 
+
+def preprocess_image(image):
+  image_prep = tf.keras.applications.vgg16.preprocess_input(image)
+  image_prep = tf.image.resize(image_prep, size=(224, 224))
+  image_prep = image_prep[tf.newaxis, :]
+  return image_prep
 
 def create_feature_extractor(layer_names):
   
@@ -50,9 +44,11 @@ def create_feature_extractor(layer_names):
 
 layers_of_interest = content_layers + style_layers
 feature_extractor = create_feature_extractor(layers_of_interest)
-content_prep = tf.keras.applications.vgg16.preprocess_input(content_img)
-content_prep = tf.image.resize(content_prep, size=(224, 224))
-content_prep = content_prep[tf.newaxis, :]
+#content_prep = tf.keras.applications.vgg16.preprocess_input(content_img)
+#content_prep = tf.image.resize(content_prep, size=(224, 224))
+#content_prep = content_prep[tf.newaxis, :]
+content_prep = preprocess_image(content_img)
+content_prep = tf.constant(content_prep)
 outputs = feature_extractor(content_prep)
 
 for name, output in zip(layers_of_interest, outputs):
@@ -62,3 +58,17 @@ for name, output in zip(layers_of_interest, outputs):
   print("  max: ", output.numpy().max())
   print("  mean: ", output.numpy().mean())
   print()
+
+
+# get content and style features only once before training
+content_features = get_features(content_prep, feature_extractor)
+style_features = get_features(style_prep, feature_extractor)
+
+# calculate the gram matrices for each layer of our style representation
+style_grams = {layer: gram_matrix(style_features[layer]) for layer in style_features}
+
+# create a third "target" image and prep it for change
+# it is a good idea to start off with the target as a copy of our *content* image
+# then iteratively change its style
+target = tf.Variable(content_prep)
+#target = content.clone().requires_grad_(True).to(device)
