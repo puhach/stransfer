@@ -87,6 +87,13 @@ content_features = content_features[:len(content_layers)]
 style_features = feature_extractor(style_prep)
 style_features = style_features[len(content_layers):]
 
+# map content layers to the features extracted from these layers
+content_targets = { layer_name : content_layer_feat for 
+                    layer_name, content_layer_feat in zip(content_layers, content_features) }
+
+for content_layer_name, content_layer_features in content_targets.items():
+  print(content_layer_name)
+  print(content_layer_features.shape)
 
 # calculate the gram matrices for each layer of our style representation
 #style_grams = {layer: gram_matrix(style_features[layer]) for layer in style_features}
