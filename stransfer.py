@@ -116,6 +116,22 @@ for style_target_name, style_target_gram in style_targets.items():
 output_image = tf.Variable(content_prep)
 #target = content.clone().requires_grad_(True).to(device)
 
-
 optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
+
+
+# Weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
+# TODO: later try to combine it with style_layers
+style_layer_weights = { 'block1_conv1': 1.,
+                        'block2_conv1': 0.75,
+                        'block3_conv1': 0.2,
+                        'block4_conv1': 0.2,
+                        'block5_conv1': 0.2
+                      }
+
+assert len(style_layer_weights) == len(style_layers), "Style layer weights mismatch the style layer names"
+
+# Just like in the paper, we define an alpha (content_weight) and a beta (style_weight). This ratio will affect 
+# how stylized the final image is.
+content_weight = 1  # alpha
+style_weight = 1e6  # beta
 
