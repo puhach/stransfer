@@ -8,18 +8,6 @@ print("TensorFlow version:", tf.__version__)
 print("TensorFlow Hub version:", hub.__version__)
 
 
-content_img = imageio.imread('data/content/chicago.jpg')
-style_img = imageio.imread('data/style/wave.jpg')
-
- # Content layers to get content feature maps
-content_layers = ['block4_conv2'] 
-
-# Style layers of interest
-style_layers = ['block1_conv1',
-                'block2_conv1',
-                'block3_conv1', 
-                'block4_conv1', 
-                'block5_conv1']
 
 
 def preprocess_image(image):
@@ -60,6 +48,27 @@ def compute_gram_matrix(layer_features):
   return gram
 
 
+
+
+content_img = imageio.imread('data/content/chicago.jpg')
+style_img = imageio.imread('data/style/wave.jpg')
+
+# preprocess images
+content_prep = preprocess_image(content_img)
+style_prep = preprocess_image(style_img)
+
+
+ # Content layers to get content feature maps
+content_layers = ['block4_conv2'] 
+
+# Style layers of interest
+style_layers = ['block1_conv1',
+                'block2_conv1',
+                'block3_conv1', 
+                'block4_conv1', 
+                'block5_conv1']
+
+
 layers_of_interest = content_layers + style_layers
 feature_extractor = create_feature_extractor(layers_of_interest)
 """ content_prep = preprocess_image(content_img)
@@ -76,9 +85,6 @@ for name, output in zip(layers_of_interest, outputs):
  """
 
 
-# preprocess images
-content_prep = preprocess_image(content_img)
-style_prep = preprocess_image(style_img)
 
 # get content and style features only once before training
 input_content_features = feature_extractor(content_prep)
@@ -103,4 +109,13 @@ style_targets = { layer_name: compute_gram_matrix(style_layer_feats) for
 for style_target_name, style_target_gram in style_targets.items():
   print(style_target_name)
   print(style_target_gram.shape)
+
+
+# Create a third output image and prepare it for change.
+# To make this quick, start off with a copy of our content image, then iteratively change its style.
+output_image = tf.Variable(content_prep)
+#target = content.clone().requires_grad_(True).to(device)
+
+
+optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
