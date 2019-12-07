@@ -81,15 +81,15 @@ content_prep = preprocess_image(content_img)
 style_prep = preprocess_image(style_img)
 
 # get content and style features only once before training
-content_features = feature_extractor(content_prep)
-content_features = content_features[:len(content_layers)]
+input_content_features = feature_extractor(content_prep)
+input_content_features = input_content_features[:len(content_layers)]
 
-style_features = feature_extractor(style_prep)
-style_features = style_features[len(content_layers):]
+input_style_features = feature_extractor(style_prep)
+input_style_features = input_style_features[len(content_layers):]
 
 # map content layers to the features extracted from these layers
-content_targets = { layer_name : content_layer_feat for 
-                    layer_name, content_layer_feat in zip(content_layers, content_features) }
+content_targets = { layer_name : content_layer_feats for 
+                    layer_name, content_layer_feats in zip(content_layers, input_content_features) }
 
 for content_layer_name, content_layer_features in content_targets.items():
   print(content_layer_name)
@@ -97,15 +97,10 @@ for content_layer_name, content_layer_features in content_targets.items():
 
 # calculate the gram matrices for each layer of our style representation
 #style_grams = {layer: gram_matrix(style_features[layer]) for layer in style_features}
-style_targets = { layer_name: compute_gram_matrix(style_layer_feat) for 
-                  layer_name, style_layer_feat in zip(style_layers, style_features)} 
+style_targets = { layer_name: compute_gram_matrix(style_layer_feats) for 
+                  layer_name, style_layer_feats in zip(style_layers, input_style_features)} 
 
 for style_target_name, style_target_gram in style_targets.items():
   print(style_target_name)
   print(style_target_gram.shape)
 
-# create a third "target" image and prep it for change
-# it is a good idea to start off with the target as a copy of our *content* image
-# then iteratively change its style
-#target = tf.Variable(content_prep)
-#target = content.clone().requires_grad_(True).to(device)
