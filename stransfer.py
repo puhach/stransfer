@@ -112,3 +112,24 @@ output_image = tf.Variable(content_prep)
 
 optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
+
+# TODO: it might be interesting to create a video of images obtained after each epoch to see 
+# how style transfer is progressing.
+
+epochs = 2000
+
+for epoch in range(epochs):
+
+  # Extract content and style features from the output image
+
+  # Calculate the content loss
+
+  # Calculate the style loss
+
+  # Add up the content and style losses
+
+  # Calculate loss gradients
+
+  # Apply the gradients to alter the output image 
+
+  # Show currently obtained image
