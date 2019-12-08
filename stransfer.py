@@ -118,11 +118,22 @@ optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
 epochs = 2000
 
-for epoch in range(epochs):
+for epoch in range(1, epochs+1):
+
+  print(f"Epoch {epoch}")
 
   # Extract content and style features from the output image
+  output_features = feature_extractor(output_image)
+  output_content_map = build_content_layer_map(output_features, content_layers)
+  output_style_map = build_style_layer_map(output_features, style_layers)
+
+  #print(output_content_map)
+  #print(output_style_map)
 
   # Calculate the content loss
+  #content_loss = content_weight * tf.reduce_mean((output_content_map - content_targets)**2)
+  content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
+                            for content_layer in content_layers ]) * content_weight
 
   # Calculate the style loss
 
