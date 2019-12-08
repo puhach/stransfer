@@ -3,6 +3,8 @@ import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
 from tensorflow.keras.applications import VGG16
 import imageio
+from featureextractor import create_feature_extractor, build_content_layer_map, build_style_layer_map
+
 
 print("TensorFlow version:", tf.__version__)
 print("TensorFlow Hub version:", hub.__version__)
@@ -15,38 +17,6 @@ def preprocess_image(image):
   image_prep = tf.image.resize(image_prep, size=(224, 224))
   image_prep = image_prep[tf.newaxis, :]
   return image_prep
-
-
-def create_feature_extractor(layer_names):
-  
-  vgg = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
-  vgg.trainable = False
-
-  print(vgg.summary())
-
-  outputs = [vgg.get_layer(layer_name).output for layer_name in layer_names]
-
-  model = tf.keras.Model(vgg.inputs, outputs)
-
-  return model
-
-def compute_gram_matrix(layer_features):
-
-  # get the batch_size, depth, height, and width of the Tensor
-  b, h, w, d = layer_features.shape
-
-  assert b==1, "The function expects features extracted from a single image."
-
-  # reshape so we're multiplying the features for each channel
-  #tensor = tensor.view(d, h * w)
-  tensor = tf.reshape(layer_features, [h*w, d])
-  
-  # calculate the gram matrix
-  gram = tf.matmul(tf.transpose(tensor), tensor)
-  #gram = torch.mm(tensor, tensor.t())
-
-  return gram
-
 
 
 
@@ -86,37 +56,34 @@ for name, output in zip(layers_of_interest, outputs):
 
 
 
-# get content and style features only once before training
+# Get content and style features only once before training.
+# TODO: Perhaps, try tf.constant() here
 input_content_features = feature_extractor(content_prep)
-input_content_features = input_content_features[:len(content_layers)]
+#input_content_features = input_content_features[:len(content_layers)]
+#input_content_features = extract_content_features(content_prep, feature_extractor, content_layers)
 
 input_style_features = feature_extractor(style_prep)
-input_style_features = input_style_features[len(content_layers):]
+#input_style_features = input_style_features[len(content_layers):]
+#input_style_features = extract_style_features(style_prep, feature_extractor, style_layers)
 
 # map content layers to the features extracted from these layers
-content_targets = { layer_name : content_layer_feats for 
-                    layer_name, content_layer_feats in zip(content_layers, input_content_features) }
+#content_targets = { layer_name : content_layer_feats for 
+#                    layer_name, content_layer_feats in zip(content_layers, input_content_features) }
+content_targets = build_content_layer_map(input_content_features, content_layers)
 
 for content_layer_name, content_layer_features in content_targets.items():
   print(content_layer_name)
   print(content_layer_features.shape)
 
 # calculate the gram matrices for each layer of our style representation
-#style_grams = {layer: gram_matrix(style_features[layer]) for layer in style_features}
-style_targets = { layer_name: compute_gram_matrix(style_layer_feats) for 
-                  layer_name, style_layer_feats in zip(style_layers, input_style_features)} 
+style_targets = build_style_layer_map(input_style_features, style_layers)
+#style_targets = { layer_name: compute_gram_matrix(style_layer_feats) for 
+#                  layer_name, style_layer_feats in zip(style_layers, input_style_features)} 
 
 for style_target_name, style_target_gram in style_targets.items():
   print(style_target_name)
   print(style_target_gram.shape)
 
-
-# Create a third output image and prepare it for change.
-# To make this quick, start off with a copy of our content image, then iteratively change its style.
-output_image = tf.Variable(content_prep)
-#target = content.clone().requires_grad_(True).to(device)
-
-optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
 
 # Weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
@@ -132,6 +99,16 @@ assert len(style_layer_weights) == len(style_layers), "Style layer weights misma
 
 # Just like in the paper, we define an alpha (content_weight) and a beta (style_weight). This ratio will affect 
 # how stylized the final image is.
+# TODO: perhaps, we could get by style layer weights and, similarly, content layer weights
 content_weight = 1  # alpha
 style_weight = 1e6  # beta
+
+
+
+# Create a third output image and prepare it for change.
+# To make this quick, start off with a copy of our content image, then iteratively change its style.
+output_image = tf.Variable(content_prep)
+#target = content.clone().requires_grad_(True).to(device)
+
+optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
 
