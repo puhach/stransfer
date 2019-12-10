@@ -136,6 +136,9 @@ for epoch in range(1, epochs+1):
                             for content_layer in content_layers ]) * content_weight
 
   # Calculate the style loss
+  style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
+                        (output_style_map[style_layer] - style_targets[style_layer])**2 ) 
+                        for style_layer in style_layers]) 
 
   # Add up the content and style losses
 
