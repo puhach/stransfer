@@ -151,9 +151,9 @@ for epoch in range(1, epochs+1):
     total_loss = content_weight*content_loss + style_weight * style_loss
 
   # Calculate loss gradients
-  tape.gradient(total_loss, output_image)  
-
+  grads = tape.gradient(total_loss, output_image)  
 
   # Apply the gradients to alter the output image 
+  optimizer.apply_gradients([(grads, output_image)])
 
   # Show currently obtained image
