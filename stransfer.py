@@ -107,6 +107,10 @@ style_weight = 1e6  # beta
 
 # Create a third output image and prepare it for change.
 # To make this quick, start off with a copy of our content image, then iteratively change its style.
+# For TF docs: GradientTape records operations if they are executed within its context manager and at least one
+# of their inputs is being "watched". Trainable variables (created by tf.Variable or tf.compat.v1.get_variable, 
+# where trainable=True is default in both cases) are automatically watched. Tensors can be manually watched 
+# by invoking the watch method on the GradientTape context manager.
 output_image = tf.Variable(content_prep)
 #target = content.clone().requires_grad_(True).to(device)
 
@@ -122,29 +126,33 @@ for epoch in range(1, epochs+1):
 
   print(f"Epoch {epoch}")
 
-  # Extract content and style features from the output image
-  output_features = feature_extractor(output_image)
-  output_content_map = build_content_layer_map(output_features, content_layers)
-  output_style_map = build_style_layer_map(output_features, style_layers)
+  with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
-  #print(output_content_map)
-  #print(output_style_map)
+    # Extract content and style features from the output image
+    output_features = feature_extractor(output_image)
+    output_content_map = build_content_layer_map(output_features, content_layers)
+    output_style_map = build_style_layer_map(output_features, style_layers)
 
-  # Calculate the content loss
-  #content_loss = content_weight * tf.reduce_mean((output_content_map - content_targets)**2)
-  content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
-                            for content_layer in content_layers ]) 
+    #print(output_content_map)
+    #print(output_style_map)
 
-  # Calculate the style loss
-  style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
-                        (output_style_map[style_layer] - style_targets[style_layer])**2 ) 
-                        for style_layer in style_layers]) 
+    # Calculate the content loss
+    #content_loss = content_weight * tf.reduce_mean((output_content_map - content_targets)**2)
+    content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
+                              for content_layer in content_layers ]) 
 
-  # Add up the content and style losses
-  # TODO: Later we can try to use layer weights for both content and style maps instead of these factors
-  total_loss = content_weight*content_loss + style_weight * style_loss
+    # Calculate the style loss
+    style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
+                          (output_style_map[style_layer] - style_targets[style_layer])**2 ) 
+                          for style_layer in style_layers]) 
+
+    # Add up the content and style losses
+    # TODO: Later we can try to use layer weights for both content and style maps instead of these factors
+    total_loss = content_weight*content_loss + style_weight * style_loss
 
   # Calculate loss gradients
+  tape.gradient(total_loss, output_image)  
+
 
   # Apply the gradients to alter the output image 
 
