@@ -133,7 +133,7 @@ for epoch in range(1, epochs+1):
   # Calculate the content loss
   #content_loss = content_weight * tf.reduce_mean((output_content_map - content_targets)**2)
   content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
-                            for content_layer in content_layers ]) * content_weight
+                            for content_layer in content_layers ]) 
 
   # Calculate the style loss
   style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
@@ -141,6 +141,8 @@ for epoch in range(1, epochs+1):
                         for style_layer in style_layers]) 
 
   # Add up the content and style losses
+  # TODO: Later we can try to use layer weights for both content and style maps instead of these factors
+  total_loss = content_weight*content_loss + style_weight * style_loss
 
   # Calculate loss gradients
 
