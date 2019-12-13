@@ -12,20 +12,29 @@ print("TensorFlow Hub version:", hub.__version__)
 
 
 
-def preprocess_image(image):
-  image_prep = tf.keras.applications.vgg16.preprocess_input(image)
-  image_prep = tf.image.resize(image_prep, size=(224, 224))
+#def preprocess_image(image):
+def adjust_shape(image):
+  #image_prep = tf.keras.applications.vgg16.preprocess_input(image)
+  image_prep = tf.image.resize(image, size=(224, 224))
   image_prep = image_prep[tf.newaxis, :]
   return image_prep
+
+
+def preprocess_image(image):
+  return tf.keras.applications.vgg16.preprocess_input(image)
 
 
 
 content_img = imageio.imread('data/content/chicago.jpg')
 style_img = imageio.imread('data/style/wave.jpg')
 
-# preprocess images
-content_prep = preprocess_image(content_img)
-style_prep = preprocess_image(style_img)
+# Resize the images and add the batch dimension
+content_resized = adjust_shape(content_img)
+style_resized = adjust_shape(style_img)
+
+# Preprocess the images
+content_prep = preprocess_image(content_resized)
+style_prep = preprocess_image(style_resized)
 
 
  # Content layers to get content feature maps
@@ -101,7 +110,7 @@ assert len(style_layer_weights) == len(style_layers), "Style layer weights misma
 # how stylized the final image is.
 # TODO: perhaps, we could get by style layer weights and, similarly, content layer weights
 content_weight = 1  # alpha
-style_weight = 1e6  # beta
+style_weight = 1e4  # beta
 
 
 
@@ -111,10 +120,14 @@ style_weight = 1e6  # beta
 # of their inputs is being "watched". Trainable variables (created by tf.Variable or tf.compat.v1.get_variable, 
 # where trainable=True is default in both cases) are automatically watched. Tensors can be manually watched 
 # by invoking the watch method on the GradientTape context manager.
-output_image = tf.Variable(content_prep)
+#output_image = tf.Variable(content_resized / 255.0)
+output_image = tf.Variable(content_resized)
+#output_image = tf.Variable(content_prep) 
 #target = content.clone().requires_grad_(True).to(device)
+print(output_image.numpy().min(), output_image.numpy().max())
 
-optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
+#optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
+optimizer = tf.optimizers.Adam(learning_rate=0.2)
 
 
 # TODO: it might be interesting to create a video of images obtained after each epoch to see 
@@ -128,8 +141,13 @@ for epoch in range(1, epochs+1):
 
   with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
+    # Preprocess the output image before we pass it to VGG
+    output_prep = preprocess_image(output_image)
+    #output_prep = preprocess_image(output_image*255)
+
     # Extract content and style features from the output image
-    output_features = feature_extractor(output_image)
+    output_features = feature_extractor(output_prep)
+    #output_features = feature_extractor(output_image)
     output_content_map = build_content_layer_map(output_features, content_layers)
     output_style_map = build_style_layer_map(output_features, style_layers)
 
@@ -153,7 +171,8 @@ for epoch in range(1, epochs+1):
   # Calculate loss gradients
   grads = tape.gradient(total_loss, output_image)  
 
+
+  
   # Apply the gradients to alter the output image 
   optimizer.apply_gradients([(grads, output_image)])
 
-  # Show currently obtained image
