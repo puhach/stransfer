@@ -4,6 +4,8 @@ import tensorflow_hub as hub
 from tensorflow.keras.applications import VGG16
 import imageio
 from featureextractor import create_feature_extractor, build_content_layer_map, build_style_layer_map
+#from tensorflow.keras.preprocessing.image import array_to_img
+import numpy as np
 
 
 print("TensorFlow version:", tf.__version__)
@@ -110,7 +112,7 @@ assert len(style_layer_weights) == len(style_layers), "Style layer weights misma
 # how stylized the final image is.
 # TODO: perhaps, we could get by style layer weights and, similarly, content layer weights
 content_weight = 1  # alpha
-style_weight = 1e4  # beta
+style_weight = 1e3  # beta
 
 
 
@@ -127,7 +129,7 @@ output_image = tf.Variable(content_resized)
 print(output_image.numpy().min(), output_image.numpy().max())
 
 #optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
-optimizer = tf.optimizers.Adam(learning_rate=0.2)
+optimizer = tf.optimizers.Adam(learning_rate=0.8)
 
 
 # TODO: it might be interesting to create a video of images obtained after each epoch to see 
@@ -171,8 +173,19 @@ for epoch in range(1, epochs+1):
   # Calculate loss gradients
   grads = tape.gradient(total_loss, output_image)  
 
+  print("before gradients:")
+  print(output_image.numpy().min(), output_image.numpy().max())
 
   
   # Apply the gradients to alter the output image 
   optimizer.apply_gradients([(grads, output_image)])
 
+  print("grads:")
+  print(grads)
+
+  print("after gradients:")
+  print(output_image.numpy().min(), output_image.numpy().max())
+
+  # Keep the pixel values between 0 and 255
+  #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
+  output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
