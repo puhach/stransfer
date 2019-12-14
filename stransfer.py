@@ -52,48 +52,27 @@ style_layers = ['block1_conv1',
 
 layers_of_interest = content_layers + style_layers
 feature_extractor = create_feature_extractor(layers_of_interest)
-""" content_prep = preprocess_image(content_img)
-content_prep = tf.constant(content_prep)
-outputs = feature_extractor(content_prep)
-
-for name, output in zip(layers_of_interest, outputs):
-  print(name)
-  print("  shape: ", output.numpy().shape)
-  print("  min: ", output.numpy().min())
-  print("  max: ", output.numpy().max())
-  print("  mean: ", output.numpy().mean())
-  print()
- """
-
 
 
 # Get content and style features only once before training.
 # TODO: Perhaps, try tf.constant() here
 input_content_features = feature_extractor(content_prep)
-#input_content_features = input_content_features[:len(content_layers)]
-#input_content_features = extract_content_features(content_prep, feature_extractor, content_layers)
 
 input_style_features = feature_extractor(style_prep)
-#input_style_features = input_style_features[len(content_layers):]
-#input_style_features = extract_style_features(style_prep, feature_extractor, style_layers)
 
 # map content layers to the features extracted from these layers
-#content_targets = { layer_name : content_layer_feats for 
-#                    layer_name, content_layer_feats in zip(content_layers, input_content_features) }
 content_targets = build_content_layer_map(input_content_features, content_layers)
 
-for content_layer_name, content_layer_features in content_targets.items():
-  print(content_layer_name)
-  print(content_layer_features.shape)
+#for content_layer_name, content_layer_features in content_targets.items():
+#  print(content_layer_name)
+#  print(content_layer_features.shape)
 
 # calculate the gram matrices for each layer of our style representation
 style_targets = build_style_layer_map(input_style_features, style_layers)
-#style_targets = { layer_name: compute_gram_matrix(style_layer_feats) for 
-#                  layer_name, style_layer_feats in zip(style_layers, input_style_features)} 
 
-for style_target_name, style_target_gram in style_targets.items():
-  print(style_target_name)
-  print(style_target_gram.shape)
+#for style_target_name, style_target_gram in style_targets.items():
+#  print(style_target_name)
+#  print(style_target_gram.shape)
 
 
 
@@ -124,8 +103,6 @@ style_weight = 1e3  # beta
 # by invoking the watch method on the GradientTape context manager.
 #output_image = tf.Variable(content_resized / 255.0)
 output_image = tf.Variable(content_resized)
-#output_image = tf.Variable(content_prep) 
-#target = content.clone().requires_grad_(True).to(device)
 print(output_image.numpy().min(), output_image.numpy().max())
 
 #optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
@@ -153,11 +130,8 @@ for epoch in range(1, epochs+1):
     output_content_map = build_content_layer_map(output_features, content_layers)
     output_style_map = build_style_layer_map(output_features, style_layers)
 
-    #print(output_content_map)
-    #print(output_style_map)
 
     # Calculate the content loss
-    #content_loss = content_weight * tf.reduce_mean((output_content_map - content_targets)**2)
     content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
                               for content_layer in content_layers ]) 
 
@@ -198,6 +172,4 @@ for epoch in range(1, epochs+1):
   #output_img_array = np.array(output_image*255, np.uint8)
   output_img_array = np.array(output_image.value(), np.uint8)
   output_img_array = output_img_array.squeeze()
-  #img = array_to_img(output_img_array.squeeze())
-  #img.show()
   imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)  
