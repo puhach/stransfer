@@ -189,3 +189,15 @@ for epoch in range(1, epochs+1):
   # Keep the pixel values between 0 and 255
   #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
   output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
+
+  #print("new")
+  #print(output_image)
+
+  # Show currently obtained image
+  print(output_image.numpy().max())
+  #output_img_array = np.array(output_image*255, np.uint8)
+  output_img_array = np.array(output_image.value(), np.uint8)
+  output_img_array = output_img_array.squeeze()
+  #img = array_to_img(output_img_array.squeeze())
+  #img.show()
+  imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)  
