@@ -17,10 +17,9 @@ print("TensorFlow Hub version:", hub.__version__)
 
 
 #def preprocess_image(image):
-def adjust_shape(image):
-  #image_prep = tf.keras.applications.vgg16.preprocess_input(image)
-  image_prep = tf.image.resize(image, size=(224, 224))
-  image_prep = image_prep[tf.newaxis, :]
+def adjust_shape(image):  
+  image_prep = tf.image.resize(image, size=(224, 224))  # resize appropriately
+  image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
   return image_prep
 
 
@@ -38,6 +37,7 @@ st.sidebar.header("Settings")
 content_path = st.sidebar.selectbox('Content image', options=glob.glob('data/content/*.*'),
                                     format_func=lambda glob_path: os.path.basename(glob_path))
 
+#content_img = imageio.imread('data/content/irynka.png')
 content_img = imageio.imread(content_path)
 
 st.sidebar.image(image=np.asarray(content_img), use_column_width=True, 
