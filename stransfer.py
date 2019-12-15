@@ -6,6 +6,7 @@ import imageio
 from featureextractor import create_feature_extractor, build_content_layer_map, build_style_layer_map
 #from tensorflow.keras.preprocessing.image import array_to_img
 import numpy as np
+import streamlit as st
 
 
 print("TensorFlow version:", tf.__version__)
@@ -27,12 +28,22 @@ def preprocess_image(image):
 
 
 
+st.title("Neural Style Transfer")
+
+st.sidebar.header("Settings")
+
+
 content_img = imageio.imread('data/content/chicago.jpg')
 style_img = imageio.imread('data/style/wave.jpg')
 
 # Resize the images and add the batch dimension
 content_resized = adjust_shape(content_img)
 style_resized = adjust_shape(style_img)
+
+#content_img_st = content_img[:]
+#content_img_st = np.transpose(np.asarray(content_img), (1, 0, 2))
+st.image(image=[np.asarray(content_img), np.asarray(style_img)], use_column_width=True, 
+  caption=['Content image', 'Style image'], clamp=True, channels='RGB')
 
 # Preprocess the images
 content_prep = preprocess_image(content_resized)
@@ -112,7 +123,7 @@ optimizer = tf.optimizers.Adam(learning_rate=0.8)
 # TODO: it might be interesting to create a video of images obtained after each epoch to see 
 # how style transfer is progressing.
 
-epochs = 2000
+epochs = 2
 
 for epoch in range(1, epochs+1):
 
