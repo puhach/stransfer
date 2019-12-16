@@ -56,6 +56,9 @@ st.sidebar.image(image=np.asarray(style_img), use_column_width=True,
   caption=None, clamp=True, channels='RGB')
 
 
+progress_text = st.empty()
+progress_text.text("Preparing...")
+
 
 # Resize the images and add the batch dimension
 content_resized = adjust_shape(content_img)
@@ -142,10 +145,17 @@ optimizer = tf.optimizers.Adam(learning_rate=0.8)
 # TODO: it might be interesting to create a video of images obtained after each epoch to see 
 # how style transfer is progressing.
 
-epochs = 2
+progress_bar = st.progress(0)
+output_image_placeholder = st.empty()
+#output_image_placeholder.text("Preparing...")
+
+epochs = 20
 
 for epoch in range(1, epochs+1):
 
+  # Report progress
+  progress_text.text(f"Step {epoch}/{epochs}")
+  progress_bar.progress(epoch/epochs)
   print(f"Epoch {epoch}")
 
   with tf.GradientTape() as tape: # Record operations for automatic differentiation
@@ -201,5 +211,8 @@ for epoch in range(1, epochs+1):
   print(output_image.numpy().max())
   #output_img_array = np.array(output_image*255, np.uint8)
   output_img_array = np.array(output_image.value(), np.uint8)
-  output_img_array = output_img_array.squeeze()
+  output_img_array = output_img_array.squeeze()  
   imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)  
+  
+progress_text.text("Done!")
+progress_bar.empty()
