@@ -212,7 +212,8 @@ for epoch in range(1, epochs+1):
   #output_img_array = np.array(output_image*255, np.uint8)
   output_img_array = np.array(output_image.value(), np.uint8)
   output_img_array = output_img_array.squeeze()  
-  imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)  
+  #imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)
+  output_image_placeholder.image(output_img_array, caption='Output image', use_column_width=True, clamp=True, channels='RGB')
   
 progress_text.text("Done!")
 progress_bar.empty()
