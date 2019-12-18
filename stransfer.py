@@ -18,7 +18,9 @@ print("TensorFlow Hub version:", hub.__version__)
 
 #def preprocess_image(image):
 def adjust_shape(image):  
-  image_prep = tf.image.resize(image, size=(224, 224))  # resize appropriately
+  # TODO: Allow a user to tweak this size
+  image_prep = tf.image.resize(image, size=(512, 512), method='lanczos5')  # resize appropriately 
+  #image_prep = tf.image.resize(image, size=(224, 224), method='lanczos5')  # resize appropriately 
   image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
   return image_prep
 
@@ -209,9 +211,13 @@ for epoch in range(1, epochs+1):
 
   # Show currently obtained image
   print(output_image.numpy().max())
+  
+  #output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='gaussian')
+  output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='bilinear')
   #output_img_array = np.array(output_image*255, np.uint8)
-  output_img_array = np.array(output_image.value(), np.uint8)
-  output_img_array = output_img_array.squeeze()  
+  #output_img_array = np.array(output_image.value(), np.uint8)
+  output_img_array = np.array(output_image_resized, np.uint8)
+  #output_img_array = output_img_array.squeeze()  
   #imageio.imwrite(f"z:/test/{epoch}.jpg", output_img_array)
   output_image_placeholder.image(output_img_array, caption='Output image', use_column_width=True, clamp=True, channels='RGB')
   
