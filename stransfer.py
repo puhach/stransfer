@@ -111,6 +111,12 @@ style_targets = build_style_layer_map(input_style_features, style_layers)
 #  print(style_target_name)
 #  print(style_target_gram.shape)
 
+# Weights for each content layer
+content_layer_weights = { 'block1_conv2' : 1.0,
+                          'block5_conv1' : 0.0, 
+                          'block5_conv3' : 0.0
+                        }
+
 
 # Weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
 # TODO: later try to combine it with style_layers
@@ -174,9 +180,13 @@ for epoch in range(1, epochs+1):
     output_style_map = build_style_layer_map(output_features, style_layers)
 
 
-    # Calculate the content loss    
-    content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
-                              for content_layer in content_layers ]) 
+    # Calculate the content loss
+    content_loss = tf.add_n([content_layer_weight * tf.reduce_mean(
+                            (output_content_map[content_layer_name] - content_targets[content_layer_name])**2) 
+                            for content_layer_name, content_layer_weight in content_layer_weights.items()
+                            if content_layer_weight > 0 ]) 
+    #content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
+    #                          for content_layer in content_layers ]) 
 
     # Calculate the style loss
     style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
