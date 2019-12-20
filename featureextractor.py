@@ -6,13 +6,16 @@ from tensorflow.keras.applications import VGG16
 
 
 def create_feature_extractor(layer_names):
+#def create_feature_extractor(layers):
   
   vgg = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
   vgg.trainable = False
 
   print(vgg.summary())
 
-  outputs = [vgg.get_layer(layer_name).output for layer_name in layer_names]
+  outputs = {layer_name : vgg.get_layer(layer_name).output for layer_name in layer_names}
+  #outputs = [vgg.get_layer(layer_name).output for layer_name in layer_names]
+  #outputs = [vgg.get_layer(layer_name).output for layer_name, layer_weight in layers.items() if layer_weight > 0]
 
   model = tf.keras.Model(vgg.inputs, outputs)
 
@@ -38,9 +41,12 @@ def compute_gram_matrix(layer_features):
 
 def build_content_layer_map(features, content_layers):
     
-    content_map = { layer_name : layer_feats for 
-                    layer_name, layer_feats in 
-                    zip(content_layers, features[:len(content_layers)]) }
+    #content_map = { layer_name : layer_feats for 
+    #                layer_name, layer_feats in 
+    #                zip(content_layers, features[:len(content_layers)]) }
+
+    content_map = { layer_name : features[layer_name] for layer_name in content_layers }
+    #content_map = dict(filter(lambda f: f[0] in content_layers, features))
 
     return content_map
 
@@ -51,7 +57,16 @@ def build_style_layer_map(features, style_layers):
     # the style loss afterwards:
     # https://github.com/udacity/deep-learning-v2-pytorch/issues/174
     
-    style_map = { layer_name: compute_gram_matrix(layer_feats)/(layer_feats.shape[1]*layer_feats.shape[2]) for 
-                  layer_name, layer_feats in zip(style_layers, features[len(features)-len(style_layers):])} 
+    gram_norm = lambda f: compute_gram_matrix(f) / (f.shape[1]*f.shape[2])
+    style_map = { layer_name : gram_norm(features[layer_name])
+                  for layer_name in style_layers
+                }
+                
+    #style_map = { layer_name : compute_gram_matrix(features[layer_name])/(features[layer_name].shape[1]*features[layer_name].shape[2]) 
+    #              for layer_name in style_layers
+    #            }
+
+    #style_map = { layer_name: compute_gram_matrix(layer_feats)/(layer_feats.shape[1]*layer_feats.shape[2]) for 
+    #              layer_name, layer_feats in zip(style_layers, features[len(features)-len(style_layers):])} 
 
     return style_map

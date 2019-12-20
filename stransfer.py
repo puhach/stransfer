@@ -74,47 +74,10 @@ content_prep = preprocess_image(content_resized)
 style_prep = preprocess_image(style_resized)
 
 
- # Content layers to get content feature maps
-content_layers = ['block1_conv2', 
-                  'block5_conv1',
-                  'block5_conv3'] 
-
-# Style layers of interest
-style_layers = ['block1_conv1',
-                'block2_conv1',
-                'block3_conv1', 
-                'block4_conv1', 
-                'block5_conv1']
-
-
-layers_of_interest = content_layers + style_layers
-feature_extractor = create_feature_extractor(layers_of_interest)
-
-
-# Get content and style features only once before training.
-# TODO: Perhaps, try tf.constant() here
-input_content_features = feature_extractor(content_prep)
-
-input_style_features = feature_extractor(style_prep)
-
-# map content layers to the features extracted from these layers
-content_targets = build_content_layer_map(input_content_features, content_layers)
-
-#for content_layer_name, content_layer_features in content_targets.items():
-#  print(content_layer_name)
-#  print(content_layer_features.shape)
-
-# calculate the gram matrices for each layer of our style representation
-style_targets = build_style_layer_map(input_style_features, style_layers)
-
-#for style_target_name, style_target_gram in style_targets.items():
-#  print(style_target_name)
-#  print(style_target_gram.shape)
-
 # Weights for each content layer
 content_layer_weights = { 'block1_conv2' : 1.0,
-                          'block5_conv1' : 0.0, 
-                          'block5_conv3' : 0.0
+                          'block5_conv1' : 0.5, 
+                          'block5_conv3' : 0.2
                         }
 
 
@@ -127,7 +90,53 @@ style_layer_weights = { 'block1_conv1': 1.,
                         'block5_conv1': 0.2
                       }
 
-assert len(style_layer_weights) == len(style_layers), "Style layer weights mismatch the style layer names"
+#assert len(style_layer_weights) == len(style_layers), "Style layer weights mismatch the style layer names"
+
+
+# Content layers to get content feature maps
+#content_layers = ['block1_conv2', 
+#                  'block5_conv1',
+#                  'block5_conv3'] 
+
+# Style layers of interest
+#style_layers = ['block1_conv1',
+#                'block2_conv1',
+#                'block3_conv1', 
+#                'block4_conv1', 
+#                'block5_conv1']
+
+
+#layers_of_interest = content_layers + style_layers
+layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
+feature_extractor = create_feature_extractor(layers_of_interest)
+
+
+# Get content and style features only once before training.
+# TODO: Perhaps, try tf.constant() here
+input_content_features = feature_extractor(content_prep)
+
+input_style_features = feature_extractor(style_prep)
+
+# map content layers to the features extracted from these layers
+content_targets = build_content_layer_map(input_content_features, content_layer_weights.keys())
+#import timeit
+#t = timeit.timeit(lambda : build_content_layer_map(input_content_features, content_layer_weights.keys()) , number=100)
+#print("time:", t)
+
+#for content_layer_name, content_layer_features in content_targets.items():
+#  print(content_layer_name)
+#  print(content_layer_features.shape)
+
+# calculate the gram matrices for each layer of our style representation
+style_targets = build_style_layer_map(input_style_features, style_layer_weights.keys())
+#import timeit
+#t = timeit.timeit(lambda : build_style_layer_map(input_style_features, style_layer_weights.keys()), number=100)
+#print("time:", t)
+
+#for style_target_name, style_target_gram in style_targets.items():
+#  print(style_target_name)
+#  print(style_target_gram.shape)
+
 
 # Just like in the paper, we define an alpha (content_weight) and a beta (style_weight). This ratio will affect 
 # how stylized the final image is.
@@ -176,8 +185,8 @@ for epoch in range(1, epochs+1):
     # Extract content and style features from the output image
     output_features = feature_extractor(output_prep)
     #output_features = feature_extractor(output_image)
-    output_content_map = build_content_layer_map(output_features, content_layers)
-    output_style_map = build_style_layer_map(output_features, style_layers)
+    output_content_map = build_content_layer_map(output_features, content_layer_weights.keys())
+    output_style_map = build_style_layer_map(output_features, style_layer_weights.keys())
 
 
     # Calculate the content loss
