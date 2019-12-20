@@ -75,7 +75,9 @@ style_prep = preprocess_image(style_resized)
 
 
  # Content layers to get content feature maps
-content_layers = ['block4_conv2'] 
+content_layers = ['block1_conv2', 
+                  'block5_conv1',
+                  'block5_conv3'] 
 
 # Style layers of interest
 style_layers = ['block1_conv1',
@@ -110,7 +112,6 @@ style_targets = build_style_layer_map(input_style_features, style_layers)
 #  print(style_target_gram.shape)
 
 
-
 # Weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
 # TODO: later try to combine it with style_layers
 style_layer_weights = { 'block1_conv1': 1.,
@@ -126,7 +127,7 @@ assert len(style_layer_weights) == len(style_layers), "Style layer weights misma
 # how stylized the final image is.
 # TODO: perhaps, we could get by style layer weights and, similarly, content layer weights
 content_weight = 1  # alpha
-style_weight = 1e3  # beta
+style_weight = 1e1  # beta
 
 
 
@@ -173,14 +174,18 @@ for epoch in range(1, epochs+1):
     output_style_map = build_style_layer_map(output_features, style_layers)
 
 
-    # Calculate the content loss
+    # Calculate the content loss    
     content_loss = tf.add_n( [tf.reduce_mean((output_content_map[content_layer] - content_targets[content_layer])**2) 
                               for content_layer in content_layers ]) 
 
     # Calculate the style loss
-    style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
-                          (output_style_map[style_layer] - style_targets[style_layer])**2 ) 
-                          for style_layer in style_layers]) 
+    style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
+                          (output_style_map[style_layer_name] - style_targets[style_layer_name])**2 ) 
+                          for style_layer_name, style_layer_weight in style_layer_weights.items()
+                          if style_layer_weight > 0]) 
+    #style_loss = tf.add_n([style_layer_weights[style_layer] * tf.reduce_mean(
+    #                      (output_style_map[style_layer] - style_targets[style_layer])**2 ) 
+    #                      for style_layer in style_layers])  
 
     # Add up the content and style losses
     # TODO: Later we can try to use layer weights for both content and style maps instead of these factors
