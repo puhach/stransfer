@@ -17,9 +17,9 @@ print("TensorFlow Hub version:", hub.__version__)
 
 
 #def preprocess_image(image):
-def adjust_shape(image):  
+def adjust_shape(image, size):  
   # TODO: Allow a user to tweak this size
-  image_prep = tf.image.resize(image, size=(512, 512), method='lanczos5')  # resize appropriately 
+  image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
   #image_prep = tf.image.resize(image, size=(224, 224), method='lanczos5')  # resize appropriately 
   image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
   return image_prep
@@ -29,10 +29,15 @@ def preprocess_image(image):
   return tf.keras.applications.vgg16.preprocess_input(image)
 
 
+# Initialize GUI
 
 st.title("Neural Style Transfer")
 
 st.sidebar.header("Settings")
+
+progress_text = st.empty()
+progress_text.text("Preparing...")
+
 
 # Select the content image
 
@@ -58,13 +63,15 @@ st.sidebar.image(image=np.asarray(style_img), use_column_width=True,
   caption=None, clamp=True, channels='RGB')
 
 
-progress_text = st.empty()
-progress_text.text("Preparing...")
+# Specify the resolution the input images should be resized to before they are passed to VGG network
+
+size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
+                          step=1, format='%d')
 
 
 # Resize the images and add the batch dimension
-content_resized = adjust_shape(content_img)
-style_resized = adjust_shape(style_img)
+content_resized = adjust_shape(content_img, (size, size))
+style_resized = adjust_shape(style_img, (size, size))
 
 #st.sidebar.image(image=[np.asarray(content_img), np.asarray(style_img)], use_column_width=True, 
 #  caption=['Content image', 'Style image'], clamp=True, channels='RGB')
