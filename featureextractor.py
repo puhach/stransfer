@@ -4,12 +4,25 @@ import tensorflow_hub as hub
 from tensorflow.keras.applications import VGG16
 
 
+def load_model(name, weights='imagenet'):
 
-def create_feature_extractor(layer_names):
+  if name.lower() == "vgg16":
+    model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
+  elif name.lower() == "vgg19":
+    model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+  else:
+    raise Exception(f'Model "{name}" is not supported.')
+
+  model.trainable = False
+
+  return model
+
+
+def create_feature_extractor(vgg, layer_names):
 #def create_feature_extractor(layers):
   
-  vgg = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
-  vgg.trainable = False
+  #vgg = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
+  #vgg.trainable = False
 
   print(vgg.summary())
 

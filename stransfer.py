@@ -3,7 +3,7 @@ import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
 from tensorflow.keras.applications import VGG16
 import imageio
-from featureextractor import create_feature_extractor, build_content_layer_map, build_style_layer_map
+from featureextractor import load_model, create_feature_extractor, build_content_layer_map, build_style_layer_map
 #from tensorflow.keras.preprocessing.image import array_to_img
 import numpy as np
 import streamlit as st
@@ -68,7 +68,6 @@ st.sidebar.image(image=np.asarray(style_img), use_column_width=True,
 size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
                           step=1, format='%d')
 
-
 # Resize the images and add the batch dimension
 content_resized = adjust_shape(content_img, (size, size))
 style_resized = adjust_shape(style_img, (size, size))
@@ -79,6 +78,10 @@ style_resized = adjust_shape(style_img, (size, size))
 # Preprocess the images
 content_prep = preprocess_image(content_resized)
 style_prep = preprocess_image(style_resized)
+
+
+# Instantiate VGG network
+vgg = load_model('VGG16')
 
 
 # Weights for each content layer
@@ -115,7 +118,7 @@ style_layer_weights = { 'block1_conv1': 1.,
 
 #layers_of_interest = content_layers + style_layers
 layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
-feature_extractor = create_feature_extractor(layers_of_interest)
+feature_extractor = create_feature_extractor(vgg, layers_of_interest)
 
 
 # Get content and style features only once before training.
@@ -254,3 +257,4 @@ for epoch in range(1, epochs+1):
   
 progress_text.text("Done!")
 progress_bar.empty()
+
