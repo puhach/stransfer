@@ -6,9 +6,13 @@ import imageio
 from featureextractor import load_model, create_feature_extractor, build_content_layer_map, build_style_layer_map
 #from tensorflow.keras.preprocessing.image import array_to_img
 import numpy as np
+import random
 import streamlit as st
+#import altair as alt
+import pandas as pd
 import glob
 import os
+#import uuid
 
 print("TensorFlow version:", tf.__version__)
 print("TensorFlow Hub version:", hub.__version__)
@@ -26,7 +30,48 @@ def adjust_shape(image, size):
 
 
 def preprocess_image(image):
+  # TODO: add model name parameter to choose which model we aim at
   return tf.keras.applications.vgg16.preprocess_input(image)
+
+
+def get_layer_weights(model):
+  #if st.sidebar.button('Rerun'):
+  #  raise st.ScriptRunner.RerunException(st.ScriptRequestQueue.RerunData(_get_widget_states()))
+  
+  # Extract convolutional layers from the model
+  conv_layers = [layer.name for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
+  #print(conv_layers)
+
+  assert len(conv_layers) > 0, "The model has no convolutional layers."
+
+  max_layer_weight = 10.0
+
+  # Initialize chosen layers with random weights and give the rest the weight of zero.
+  layer_weight_func = lambda layer_name, chosen_layers, suffix : st.sidebar.slider(
+      label=layer_name, min_value=0.0, max_value=max_layer_weight,
+      value=random.uniform(a=0.0, b=max_layer_weight) if layer_name in chosen_layers else 0.0,
+      step=0.01, key='slider_'+layer_name+'_'+suffix)
+
+  st.sidebar.subheader("Content weights")
+
+  chosen_content_layers = random.sample(conv_layers, k=1)
+  
+  content_weights = {
+    name : layer_weight_func(name, chosen_content_layers, 'content')
+    for name in conv_layers 
+  }
+
+  st.sidebar.subheader("Style weights")
+
+  chosen_style_layers = random.sample(conv_layers, k=3)
+
+  style_weights = {
+    #name : st.sidebar.slider(label=name, min_value=0.0, max_value=1.0, value=0.5)
+    name : layer_weight_func(name, chosen_style_layers, 'style')
+    for name in conv_layers
+  }
+
+  return content_weights, style_weights
 
 
 # Initialize GUI
@@ -83,6 +128,7 @@ style_prep = preprocess_image(style_resized)
 # Instantiate VGG network
 vgg = load_model('VGG16')
 
+get_layer_weights(vgg)
 
 # Weights for each content layer
 content_layer_weights = { 'block1_conv2' : 1.0,
