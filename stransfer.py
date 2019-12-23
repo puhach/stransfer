@@ -3,12 +3,12 @@ import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
 from tensorflow.keras.applications import VGG16
 import imageio
-from featureextractor import load_model, create_feature_extractor, build_content_layer_map, build_style_layer_map
+from featureextractor import *
 #from tensorflow.keras.preprocessing.image import array_to_img
 import numpy as np
 import random
 import streamlit as st
-#import altair as alt
+import altair as alt
 import pandas as pd
 import glob
 import os
@@ -34,44 +34,55 @@ def preprocess_image(image):
   return tf.keras.applications.vgg16.preprocess_input(image)
 
 
-def get_layer_weights(model):
+
+def get_layer_weights(conv_layers, chosen_layers, layer_type):
   #if st.sidebar.button('Rerun'):
   #  raise st.ScriptRunner.RerunException(st.ScriptRequestQueue.RerunData(_get_widget_states()))
   
-  # Extract convolutional layers from the model
-  conv_layers = [layer.name for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
-  #print(conv_layers)
-
-  assert len(conv_layers) > 0, "The model has no convolutional layers."
-
   max_layer_weight = 10.0
 
   # Initialize chosen layers with random weights and give the rest the weight of zero.
-  layer_weight_func = lambda layer_name, chosen_layers, suffix : st.sidebar.slider(
+  layer_weight_func = lambda layer_name, chosen_layers : st.sidebar.slider(
       label=layer_name, min_value=0.0, max_value=max_layer_weight,
       value=random.uniform(a=0.0, b=max_layer_weight) if layer_name in chosen_layers else 0.0,
-      step=0.01, key='slider_'+layer_name+'_'+suffix)
+      step=0.01, key='slider_'+layer_name+'_'+layer_type)
 
-  st.sidebar.subheader("Content weights")
+  chart_placeholder = st.sidebar.empty()
 
-  chosen_content_layers = random.sample(conv_layers, k=1)
+  #chosen_content_layers = random.sample(conv_layers, k=1)
   
-  content_weights = {
-    name : layer_weight_func(name, chosen_content_layers, 'content')
+  layer_weights = {
+    name : layer_weight_func(name, chosen_layers)
     for name in conv_layers 
   }
 
-  st.sidebar.subheader("Style weights")
+  data = pd.DataFrame.from_dict({ 'layer' : list(layer_weights.keys()),
+                                  'weight' : list(layer_weights.values())})
 
-  chosen_style_layers = random.sample(conv_layers, k=3)
+  chart = alt.Chart(data).mark_bar().encode(
+    y='layer',
+    x='weight'
+  )
 
-  style_weights = {
-    #name : st.sidebar.slider(label=name, min_value=0.0, max_value=1.0, value=0.5)
-    name : layer_weight_func(name, chosen_style_layers, 'style')
-    for name in conv_layers
-  }
+  chart_placeholder.altair_chart(altair_chart=chart, width=0)
 
-  return content_weights, style_weights
+
+  #data = pd.DataFrame.from_dict({
+  #                    'layer': list(content_weights.keys()) + list(style_weights.keys()), 
+  #                    'weight': list(content_weights.values()) + list(style_weights.values()),
+  #                    'type': ['C']*len(content_weights) + ['S']*len(style_weights)})
+
+  #chart = alt.Chart(data).mark_bar().encode(
+  #  row='layer',
+  #  y='type',
+  #  x='weight',
+  #  color='type'
+  #)
+
+
+  #st.sidebar.altair_chart(altair_chart=chart, width=200)
+
+  return layer_weights
 
 
 # Initialize GUI
@@ -128,7 +139,16 @@ style_prep = preprocess_image(style_resized)
 # Instantiate VGG network
 vgg = load_model('VGG16')
 
-get_layer_weights(vgg)
+# Extract convolutional layers from the model
+conv_layers = extract_conv_layers(vgg)
+
+assert len(conv_layers) > 0, "The model has no convolutional layers."
+
+st.sidebar.subheader("Content weights")
+content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
+
+st.sidebar.subheader("Style weights")
+style_layer_weights = get_layer_weights(conv_layers, conv_layers[-2:], 'style')
 
 # Weights for each content layer
 content_layer_weights = { 'block1_conv2' : 1.0,
