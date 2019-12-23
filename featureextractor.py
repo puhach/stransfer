@@ -17,6 +17,14 @@ def load_model(name, weights='imagenet'):
 
   return model
 
+def extract_conv_layers(model):
+  # Extract convolutional layers from the model
+  conv_layers = [layer.name for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
+  #print(conv_layers)
+  return conv_layers
+  
+
+
 
 def create_feature_extractor(vgg, layer_names):
 #def create_feature_extractor(layers):
