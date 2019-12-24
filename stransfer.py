@@ -36,41 +36,49 @@ def preprocess_image(image):
 
 
 def get_layer_weights(conv_layers, chosen_layers, layer_type):
-  #if st.sidebar.button('Rerun'):
-  #  raise st.ScriptRunner.RerunException(st.ScriptRequestQueue.RerunData(_get_widget_states()))
-  
-  max_layer_weight = 10.0
-
-  # Initialize chosen layers with random weights and give the rest the weight of zero.
-  layer_weight_func = lambda layer_name, chosen_layers : st.sidebar.slider(
-      label=layer_name, min_value=0.0, max_value=max_layer_weight,
-      value=1.0 if layer_name in chosen_layers else 0.0,#random.uniform(a=0.0, b=max_layer_weight) if layer_name in chosen_layers else 0.0,
-      step=0.01, key='slider_'+layer_name+'_'+layer_type)
 
   chart_placeholder = st.sidebar.empty()
 
-  #chosen_content_layers = random.sample(conv_layers, k=1)
-  
+  max_layer_weight = 10.0
+
+  # Initialize chosen layers with weights=1.0 and give the rest the weight of zero.
+  # Random weights cause unexpected slider movements.
+  layer_weight_func = lambda layer_name, chosen_layers : st.sidebar.slider(
+      label=layer_name, min_value=0.0, max_value=max_layer_weight,
+      value=1.0 if layer_name in chosen_layers else 0.0,
+      step=0.01, key='slider_'+layer_name+'_'+layer_type)
+
+  # Display layer weights in the chart.  
+  # Not sure what is better: displaying all layers in the chart is more logical,
+  # but then they are very tight to each other.
+
+  data = pd.DataFrame.from_records(columns=['layer', 'weight'],
+    data=[(name, layer_weight_func(name, chosen_layers)) for name in conv_layers])
+
+  # Also works:
+
   #layer_weights = {
   #  name : layer_weight_func(name, chosen_layers)
   #  for name in conv_layers 
   #}
 
-  layer_weights = {
-    name: value for (name, value) in 
-    [(name, layer_weight_func(name, chosen_layers)) for name in conv_layers]
-    if value > 0
-  }
+  #layer_weights = {
+  #  name: value for (name, value) in 
+  #  [(name, layer_weight_func(name, chosen_layers)) for name in conv_layers]
+  #  if value > 0
+  #}
 
-  data = pd.DataFrame.from_dict({ 'layer' : list(layer_weights.keys()),
-                                  'weight' : list(layer_weights.values())})
+  #data = pd.DataFrame.from_dict({ 'layer' : list(layer_weights.keys()),
+  #                                'weight' : list(layer_weights.values())})
 
+  
   chart = alt.Chart(data).mark_bar().encode(
     y='layer',
     x='weight'
   )
 
-  chart_placeholder.altair_chart(altair_chart=chart, width=0)
+  chart_placeholder.altair_chart(altair_chart=chart)
+  #chart_placeholder.bar_chart(data, height=1000)
 
   # Grouped Bar Chart
   #data = pd.DataFrame.from_dict({
@@ -87,6 +95,13 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
 
 
   #st.sidebar.altair_chart(altair_chart=chart, width=200)
+  
+
+  # Create layer weight map containing only layers with positive weight.
+
+  #layer_weights = { k : v for (k,v) in layer_weights.items() if v > 0 }
+  layer_weights = { row['layer'] : row['weight'] for index, row in data.iterrows() 
+                    if row['weight'] > 0 }
   
   #if len(layer_weights) < 1:
   #  raise Exception(f"At least one {layer_type} layer must have a positive weight.")
