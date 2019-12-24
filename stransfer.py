@@ -44,7 +44,7 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
   # Initialize chosen layers with random weights and give the rest the weight of zero.
   layer_weight_func = lambda layer_name, chosen_layers : st.sidebar.slider(
       label=layer_name, min_value=0.0, max_value=max_layer_weight,
-      value=random.uniform(a=0.0, b=max_layer_weight) if layer_name in chosen_layers else 0.0,
+      value=1.0 if layer_name in chosen_layers else 0.0,#random.uniform(a=0.0, b=max_layer_weight) if layer_name in chosen_layers else 0.0,
       step=0.01, key='slider_'+layer_name+'_'+layer_type)
 
   chart_placeholder = st.sidebar.empty()
@@ -66,7 +66,7 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
 
   chart_placeholder.altair_chart(altair_chart=chart, width=0)
 
-
+  # Grouped Bar Chart
   #data = pd.DataFrame.from_dict({
   #                    'layer': list(content_weights.keys()) + list(style_weights.keys()), 
   #                    'weight': list(content_weights.values()) + list(style_weights.values()),
@@ -144,43 +144,28 @@ conv_layers = extract_conv_layers(vgg)
 
 assert len(conv_layers) > 0, "The model has no convolutional layers."
 
+# Set weights for each content layer
 st.sidebar.subheader("Content weights")
 content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
+
+#content_layer_weights = { 'block1_conv2' : 1.0,
+#                          'block5_conv1' : 0.5, 
+#                          'block5_conv3' : 0.2
+#                        }
+
+
+# Set weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
+# TODO: later try to combine it with style_layers
+#style_layer_weights = { 'block1_conv1': 1.,
+#                        'block2_conv1': 0.75,
+#                        'block3_conv1': 0.2,
+#                        'block4_conv1': 0.2,
+#                        'block5_conv1': 0.2 }
 
 st.sidebar.subheader("Style weights")
 style_layer_weights = get_layer_weights(conv_layers, conv_layers[-2:], 'style')
 
-# Weights for each content layer
-content_layer_weights = { 'block1_conv2' : 1.0,
-                          'block5_conv1' : 0.5, 
-                          'block5_conv3' : 0.2
-                        }
-
-
-# Weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
-# TODO: later try to combine it with style_layers
-style_layer_weights = { 'block1_conv1': 1.,
-                        'block2_conv1': 0.75,
-                        'block3_conv1': 0.2,
-                        'block4_conv1': 0.2,
-                        'block5_conv1': 0.2
-                      }
-
-#assert len(style_layer_weights) == len(style_layers), "Style layer weights mismatch the style layer names"
-
-
-# Content layers to get content feature maps
-#content_layers = ['block1_conv2', 
-#                  'block5_conv1',
-#                  'block5_conv3'] 
-
-# Style layers of interest
-#style_layers = ['block1_conv1',
-#                'block2_conv1',
-#                'block3_conv1', 
-#                'block4_conv1', 
-#                'block5_conv1']
-
+# TODO: ignore layers with zero weight 
 
 #layers_of_interest = content_layers + style_layers
 layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
