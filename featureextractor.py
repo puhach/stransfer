@@ -18,6 +18,9 @@ def load_model(name, weights='imagenet'):
   return model
 
 def extract_conv_layers(model):
+
+  print(model.summary())
+
   # Extract convolutional layers from the model
   conv_layers = [layer.name for layer in model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
   #print(conv_layers)
@@ -26,15 +29,13 @@ def extract_conv_layers(model):
 
 
 
-def create_feature_extractor(vgg, layer_names):
-#def create_feature_extractor(layers):
+def create_feature_extractor(vgg, layers_of_interest):
   
   #vgg = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
   #vgg.trainable = False
 
-  print(vgg.summary())
 
-  outputs = {layer_name : vgg.get_layer(layer_name).output for layer_name in layer_names}
+  outputs = {layer_name : vgg.get_layer(layer_name).output for layer_name in layers_of_interest}
   #outputs = [vgg.get_layer(layer_name).output for layer_name in layer_names]
   #outputs = [vgg.get_layer(layer_name).output for layer_name, layer_weight in layers.items() if layer_weight > 0]
 
@@ -44,24 +45,23 @@ def create_feature_extractor(vgg, layer_names):
 
 def compute_gram_matrix(layer_features):
 
-  # get the batch_size, depth, height, and width of the Tensor
+  # Get the batch_size, depth, height, and width of the Tensor
   b, h, w, d = layer_features.shape
 
   assert b==1, "The function expects features extracted from a single image."
 
-  # reshape so we're multiplying the features for each channel
-  #tensor = tensor.view(d, h * w)
+  # Reshape so we're multiplying the features for each channel
   tensor = tf.reshape(layer_features, [h*w, d])
   
-  # calculate the gram matrix
-  #gram1 = tf.matmul(tf.transpose(tensor), tensor)
+  # Calculate the gram matrix
   gram = tf.matmul(tensor, tensor, transpose_a=True)
-  #gram = torch.mm(tensor, tensor.t())
 
   return gram
 
 def build_content_layer_map(features, content_layers):
     
+    # TODO: describe expected features shape: (1, H, W, C) ?
+
     #content_map = { layer_name : layer_feats for 
     #                layer_name, layer_feats in 
     #                zip(content_layers, features[:len(content_layers)]) }
@@ -74,6 +74,8 @@ def build_content_layer_map(features, content_layers):
 
 def build_style_layer_map(features, style_layers):
     
+    # TODO: describe expected features shape: (1, H, W, C) ?
+
     # Each layer's Gram matrix is divided by height*width of the feature map. It makes easier to calculate 
     # the style loss afterwards:
     # https://github.com/udacity/deep-learning-v2-pytorch/issues/174
@@ -83,10 +85,6 @@ def build_style_layer_map(features, style_layers):
                   for layer_name in style_layers
                 }
                 
-    #style_map = { layer_name : compute_gram_matrix(features[layer_name])/(features[layer_name].shape[1]*features[layer_name].shape[2]) 
-    #              for layer_name in style_layers
-    #            }
-
     #style_map = { layer_name: compute_gram_matrix(layer_feats)/(layer_feats.shape[1]*layer_feats.shape[2]) for 
     #              layer_name, layer_feats in zip(style_layers, features[len(features)-len(style_layers):])} 
 
