@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
-from tensorflow.keras.applications import VGG16
+from tensorflow.keras.applications import VGG16, VGG19
 import imageio
 from featureextractor import *
 #from tensorflow.keras.preprocessing.image import array_to_img
@@ -12,7 +12,6 @@ import altair as alt
 import pandas as pd
 import glob
 import os
-#import uuid
 import traceback 
 
 print("TensorFlow version:", tf.__version__)
@@ -25,14 +24,18 @@ print("TensorFlow Hub version:", hub.__version__)
 def adjust_shape(image, size):  
   # TODO: Allow a user to tweak this size
   image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
-  #image_prep = tf.image.resize(image, size=(224, 224), method='lanczos5')  # resize appropriately 
   image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
   return image_prep
 
 
-def preprocess_image(image):
-  # TODO: add model name parameter to choose which model we aim at
-  return tf.keras.applications.vgg16.preprocess_input(image)
+def preprocess_image(image, model_name):
+  
+  if model_name.lower() == "vgg16":
+    return tf.keras.applications.vgg16.preprocess_input(image)
+  elif model_name.lower() == "vgg19":
+    return tf.keras.applications.vgg19.preprocess_input(image)
+  else:
+    raise Exception(f'Model "{model_name}" is not supported')
 
 
 
@@ -153,13 +156,16 @@ try:
   #  caption=['Content image', 'Style image'], clamp=True, channels='RGB')
 
 
+  # Choose the model.
+  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19'], index=0)
+
   # Preprocess the images.
-  content_prep = preprocess_image(content_resized)
-  style_prep = preprocess_image(style_resized)
+  content_prep = preprocess_image(content_resized, model_name)
+  style_prep = preprocess_image(style_resized, model_name) 
 
 
   # Instantiate the VGG network.
-  vgg = load_model('VGG16')
+  vgg = load_model(model_name)
 
 
   # Extract convolutional layers from the model
@@ -245,7 +251,7 @@ try:
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
       # Preprocess the output image before we pass it to VGG
-      output_prep = preprocess_image(output_image)
+      output_prep = preprocess_image(output_image, model_name)
       #output_prep = preprocess_image(output_image*255)
 
       # Extract content and style features from the output image.
