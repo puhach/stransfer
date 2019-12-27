@@ -148,13 +148,16 @@ try:
                             step=1, format='%d')
 
 
-  # Resize the images and add the batch dimension
+  # Resize the images and add the batch dimension.
   content_resized = adjust_shape(content_img, (size, size))
   style_resized = adjust_shape(style_img, (size, size))
 
   #st.sidebar.image(image=[np.asarray(content_img), np.asarray(style_img)], use_column_width=True, 
   #  caption=['Content image', 'Style image'], clamp=True, channels='RGB')
 
+
+  # Specify the number of steps.
+  steps = st.sidebar.number_input(label='Steps', min_value=1, max_value=10000, value=20, step=1)
 
   # Choose the model.
   model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19'], index=0)
@@ -239,14 +242,15 @@ try:
   progress_bar = st.progress(0)
   output_image_placeholder = st.empty()
 
-  epochs = 20
+  #epochs = 20
 
-  for epoch in range(1, epochs+1):
+  #for epoch in range(1, epochs+1):
+  for step in range(1, steps+1):
 
     # Report progress
-    progress_text.text(f"Step {epoch}/{epochs}")
-    progress_bar.progress(epoch/epochs)
-    print(f"Epoch {epoch}")
+    progress_text.text(f"Step {step}/{steps}")
+    progress_bar.progress(step/steps)
+    print(f"Step {step}")
 
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
