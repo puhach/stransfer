@@ -120,7 +120,7 @@ try:
   progress_text = st.empty()
   progress_text.text("Preparing...")
 
-
+  
   # Select the content image
 
   content_path = st.sidebar.selectbox('Content image', options=glob.glob('data/content/*.*'),
@@ -181,12 +181,13 @@ try:
   # Set weights for each content layer
   
   st.sidebar.subheader("Content weights")
-  content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
+  #content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
+  content_layer_weights = get_layer_weights(conv_layers, conv_layers[-1:], 'content')
 
   # Set weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
 
   st.sidebar.subheader("Style weights")
-  style_layer_weights = get_layer_weights(conv_layers, conv_layers[-2:], 'style')
+  style_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'style')
   
   assert len(content_layer_weights) > 0 and len(style_layer_weights) > 0, \
     f"At least one content layer and one style layer must have a positive weight."
@@ -220,6 +221,8 @@ try:
   style_weight = 1e1  # beta
 
 
+  # TODO: Consider wrapping TensorFlow stuff into a function to release memory:
+  # https://stackoverflow.com/questions/39758094/clearing-tensorflow-gpu-memory-after-model-execution
 
   # Create a third output image and prepare it for change.
   # To make this quick, start off with a copy of our content image, then iteratively change its style.
@@ -316,7 +319,7 @@ try:
     
   progress_text.text("Done!")
   progress_bar.empty()
-
+  
 except Exception as e:
   progress_text.text(e)
   traceback.print_exc()
