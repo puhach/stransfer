@@ -41,7 +41,7 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
 
   chart_placeholder = st.sidebar.empty()
 
-  max_layer_weight = 10.0
+  max_layer_weight = 1.0
 
   # Initialize chosen layers with weights=1.0 and give the rest the weight of zero.
   # Random weights cause unexpected slider movements.
@@ -163,7 +163,7 @@ try:
   content_prep = preprocess_image(content_resized, model_name)
   style_prep = preprocess_image(style_resized, model_name) 
 
-
+  # TODO: not sure if they make any tangible difference. Probably, they can be removed.
   # Overall content weight (alpha) and style weight (beta).
   alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
