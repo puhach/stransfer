@@ -20,9 +20,7 @@ print("TensorFlow Hub version:", hub.__version__)
 
 
 
-#def preprocess_image(image):
 def adjust_shape(image, size):  
-  # TODO: Allow a user to tweak this size
   image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
   image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
   return image_prep
@@ -167,6 +165,10 @@ try:
   style_prep = preprocess_image(style_resized, model_name) 
 
 
+  # Overall content weight (alpha) and style weight (beta).
+  alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
+  beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
+
   # Instantiate the VGG network.
   vgg = load_model(model_name)
 
@@ -180,13 +182,13 @@ try:
 
   # Set weights for each content layer
   
-  st.sidebar.subheader("Content weights")
+  st.sidebar.subheader("Content layer weights")
   #content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
   content_layer_weights = get_layer_weights(conv_layers, conv_layers[-1:], 'content')
 
   # Set weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
 
-  st.sidebar.subheader("Style weights")
+  st.sidebar.subheader("Style layer weights")
   style_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'style')
   
   assert len(content_layer_weights) > 0 and len(style_layer_weights) > 0, \
@@ -213,12 +215,6 @@ try:
   # Map style layers to the gram matrices calculated for each layer of our style representation.
   style_targets = build_style_layer_map(input_style_features, style_layer_weights.keys())
   
-
-  # Just like in the paper, we define an alpha (content_weight) and a beta (style_weight). This ratio will affect 
-  # how stylized the final image is.
-  # TODO: perhaps, we could get by style layer weights and, similarly, content layer weights
-  content_weight = 1  # alpha
-  style_weight = 1e1  # beta
 
 
   # TODO: Consider wrapping TensorFlow stuff into a function to release memory:
@@ -280,9 +276,10 @@ try:
                             for style_layer_name, style_layer_weight in style_layer_weights.items()
                             if style_layer_weight > 0]) 
 
+      # TODO: try to use the total variation loss to reduce high frequency artifacts
+
       # Add up the content and style losses
-      # TODO: Later we can try to use layer weights for both content and style maps instead of these factors
-      total_loss = content_weight*content_loss + style_weight * style_loss
+      total_loss = alpha*content_loss + beta * style_loss
 
     # Calculate loss gradients
     grads = tape.gradient(total_loss, output_image)  
