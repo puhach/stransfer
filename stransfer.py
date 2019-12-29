@@ -140,16 +140,6 @@ try:
   st.sidebar.image(image=np.asarray(style_img), use_column_width=True, 
     caption=None, clamp=True, channels='RGB')
 
-
-  # Specify the resolution the input images should be resized to before they are passed to VGG network.
-  size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
-                            step=1, format='%d')
-
-
-  # Resize the images and add the batch dimension.
-  content_resized = adjust_shape(content_img, (size, size))
-  style_resized = adjust_shape(style_img, (size, size))
-
   #st.sidebar.image(image=[np.asarray(content_img), np.asarray(style_img)], use_column_width=True, 
   #  caption=['Content image', 'Style image'], clamp=True, channels='RGB')
 
@@ -159,6 +149,15 @@ try:
 
   # Choose the model.
   model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19'], index=0)
+
+  # Specify the resolution the input images should be resized to before they are passed to VGG network.
+  size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
+                            step=1, format='%d')
+
+
+  # Resize the images and add the batch dimension.
+  content_resized = adjust_shape(content_img, (size, size))
+  style_resized = adjust_shape(style_img, (size, size))
 
   # Preprocess the images.
   content_prep = preprocess_image(content_resized, model_name)
