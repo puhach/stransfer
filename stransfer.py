@@ -107,6 +107,58 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
   return layer_weights
 
 
+# According to TF docs, when a function is decorated with tf.function, it can be called like any other function, 
+# but it will be compiled into a graph, which means we get the benefits of faster execution, running on GPU or TPU, 
+# or exporting to SavedModel.
+# https://www.tensorflow.org/guide/function
+# Later it can be a part of StyleTransfer class.
+@tf.function 
+def style_transfer_step(output_image, model_name, content_layer_weights, style_layer_weights, 
+  content_targets, style_targets, alpha, beta):
+  
+  with tf.GradientTape() as tape: # Record operations for automatic differentiation
+
+    # Preprocess the output image before we pass it to VGG
+    output_prep = preprocess_image(output_image, model_name)
+    #output_prep = preprocess_image(output_image*255)
+
+    # Extract content and style features from the output image.
+    output_features = feature_extractor(output_prep)
+    #output_features = feature_extractor(output_image)
+    output_content_map = build_content_layer_map(output_features, content_layer_weights.keys())
+    output_style_map = build_style_layer_map(output_features, style_layer_weights.keys())
+
+
+    # Calculate the content loss
+    content_loss = tf.add_n([content_layer_weight * tf.reduce_mean(
+                            (output_content_map[content_layer_name] - content_targets[content_layer_name])**2) 
+                            for content_layer_name, content_layer_weight in content_layer_weights.items()
+                            if content_layer_weight > 0 ]) 
+
+    # Calculate the style loss
+    style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
+                          (output_style_map[style_layer_name] - style_targets[style_layer_name])**2 ) 
+                          for style_layer_name, style_layer_weight in style_layer_weights.items()
+                          if style_layer_weight > 0]) 
+
+    # TODO: try to use the total variation loss to reduce high frequency artifacts
+
+    # Add up the content and style losses
+    total_loss = alpha*content_loss + beta * style_loss
+
+  # Calculate loss gradients
+  grads = tape.gradient(total_loss, output_image)  
+  #del tape
+
+  # Apply the gradients to alter the output image 
+  optimizer.apply_gradients([(grads, output_image)])
+
+  # Keep the pixel values between 0 and 255
+  #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
+  output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
+
+
+
 try:
 
   # Initialize GUI
@@ -240,9 +292,14 @@ try:
   progress_bar = st.progress(0)
   output_image_placeholder = st.empty()
 
-  #epochs = 20
-
-  #for epoch in range(1, epochs+1):
+  # TODO: perhaps, it makes sense to create a StyleTransfer class, e.g.:
+  # StyleTransfer style_transfer(content_img, style_img, model_name)
+  # conv_layers = style_transfer.get_conv_layers()
+  # ... get layers weights ...
+  # for output_image in style_transfer(steps, content_layer_weights, style_layer_weights, alpha, beta, optimizer)
+  #   ... print step ...
+  #   ... show intermediate image ...
+  
   for step in range(1, steps+1):
 
     # Report progress
@@ -250,55 +307,8 @@ try:
     progress_bar.progress(step/steps)
     print(f"Step {step}")
 
-    with tf.GradientTape() as tape: # Record operations for automatic differentiation
-
-      # Preprocess the output image before we pass it to VGG
-      output_prep = preprocess_image(output_image, model_name)
-      #output_prep = preprocess_image(output_image*255)
-
-      # Extract content and style features from the output image.
-      output_features = feature_extractor(output_prep)
-      #output_features = feature_extractor(output_image)
-      output_content_map = build_content_layer_map(output_features, content_layer_weights.keys())
-      output_style_map = build_style_layer_map(output_features, style_layer_weights.keys())
-
-
-      # Calculate the content loss
-      content_loss = tf.add_n([content_layer_weight * tf.reduce_mean(
-                              (output_content_map[content_layer_name] - content_targets[content_layer_name])**2) 
-                              for content_layer_name, content_layer_weight in content_layer_weights.items()
-                              if content_layer_weight > 0 ]) 
-
-      # Calculate the style loss
-      style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
-                            (output_style_map[style_layer_name] - style_targets[style_layer_name])**2 ) 
-                            for style_layer_name, style_layer_weight in style_layer_weights.items()
-                            if style_layer_weight > 0]) 
-
-      # TODO: try to use the total variation loss to reduce high frequency artifacts
-
-      # Add up the content and style losses
-      total_loss = alpha*content_loss + beta * style_loss
-
-    # Calculate loss gradients
-    grads = tape.gradient(total_loss, output_image)  
-
-    #print("before gradients:")
-    #print(output_image.numpy().min(), output_image.numpy().max())
-
-    
-    # Apply the gradients to alter the output image 
-    optimizer.apply_gradients([(grads, output_image)])
-
-    #print("grads:")
-    #print(grads)
-
-    #print("after gradients:")
-    #print(output_image.numpy().min(), output_image.numpy().max())
-
-    # Keep the pixel values between 0 and 255
-    #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
-    output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
+    style_transfer_step(output_image, model_name, content_layer_weights, style_layer_weights, 
+      content_targets, style_targets, alpha, beta)
 
     #print("new")
     #print(output_image)
