@@ -255,9 +255,9 @@ try:
 
 
   # Get content and style features only once before training.
-  # TODO: Perhaps, try tf.constant() here
-  input_content_features = feature_extractor(content_prep)
-  input_style_features = feature_extractor(style_prep)
+  # Not sure whether tf.constant() is important here.
+  input_content_features = feature_extractor(tf.constant(content_prep))
+  input_style_features = feature_extractor(tf.constant(style_prep))
 
 
   # Map content layers to the features extracted from these layers.
