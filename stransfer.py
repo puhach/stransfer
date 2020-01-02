@@ -32,6 +32,9 @@ def preprocess_image(image, model_name):
     return tf.keras.applications.vgg16.preprocess_input(image)
   elif model_name.lower() == "vgg19":
     return tf.keras.applications.vgg19.preprocess_input(image)
+  elif model_name.lower() == "inception_v3":
+    #print(type(image))
+    return tf.keras.applications.inception_v3.preprocess_input(image)
   else:
     raise Exception(f'Model "{model_name}" is not supported')
 
@@ -118,8 +121,11 @@ def style_transfer_step(output_image, model_name, content_layer_weights, style_l
   
   with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
-    # Preprocess the output image before we pass it to VGG
-    output_prep = preprocess_image(output_image, model_name)
+    # Preprocess the output image before we pass it to the model.
+    # Inception models seem to fail to preprocess images as passed in as variables,
+    # therefore value() method is used.
+    #output_prep = preprocess_image(output_image, model_name)
+    output_prep = preprocess_image(output_image.value(), model_name)
     #output_prep = preprocess_image(output_image*255)
 
     # Extract content and style features from the output image.
@@ -200,7 +206,8 @@ try:
   steps = st.sidebar.number_input(label='Steps', min_value=1, max_value=10000, value=20, step=1)
 
   # Choose the model.
-  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19'], index=0)
+  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19', 'Inception_V3'], index=0)
+  #model_name = 'Inception_V3'
 
   # Specify the resolution the input images should be resized to before they are passed to VGG network.
   size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 

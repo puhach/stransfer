@@ -10,6 +10,8 @@ def load_model(name, weights='imagenet'):
     model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
   elif name.lower() == "vgg19":
     model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+  elif name.lower() == "inception_v3":
+    model = tf.keras.applications.InceptionV3(include_top=False, weights='imagenet')
   else:
     raise Exception(f'Model "{name}" is not supported.')
 
