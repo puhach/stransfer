@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
-from tensorflow.keras.applications import VGG16
+#from tensorflow.keras.applications import VGG16
 
 
 def load_model(name, weights='imagenet'):
@@ -12,6 +12,10 @@ def load_model(name, weights='imagenet'):
     model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
   elif name.lower() == "inception_v3":
     model = tf.keras.applications.InceptionV3(include_top=False, weights='imagenet')
+  elif name.lower() == "nasnet":
+    model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
+  elif name.lower() == "densenet":
+    model = tf.keras.applications.DenseNet121(include_top=False, weights='imagenet')
   else:
     raise Exception(f'Model "{name}" is not supported.')
 

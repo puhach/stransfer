@@ -33,8 +33,11 @@ def preprocess_image(image, model_name):
   elif model_name.lower() == "vgg19":
     return tf.keras.applications.vgg19.preprocess_input(image)
   elif model_name.lower() == "inception_v3":
-    #print(type(image))
     return tf.keras.applications.inception_v3.preprocess_input(image)
+  elif model_name.lower() == "nasnet":
+    return tf.keras.applications.nasnet.preprocess_input(image)
+  elif model_name.lower() == "densenet":
+    return tf.keras.applications.densenet.preprocess_input(image)
   else:
     raise Exception(f'Model "{model_name}" is not supported')
 
@@ -206,13 +209,13 @@ try:
   steps = st.sidebar.number_input(label='Steps', min_value=1, max_value=10000, value=20, step=1)
 
   # Choose the model.
-  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19', 'Inception_V3'], index=0)
+  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19', 'Inception_V3', 'DenseNet'], index=0)
   #model_name = 'Inception_V3'
 
   # Specify the resolution the input images should be resized to before they are passed to VGG network.
   size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
                             step=1, format='%d')
-
+  
 
   # Resize the images and add the batch dimension.
   content_resized = adjust_shape(content_img, (size, size))
