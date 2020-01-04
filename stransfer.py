@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 # TODO: later use VGG19 and, probably, Resnet, Inception etc
 from tensorflow.keras.applications import VGG16, VGG19
+import tensorflow.keras.backend
 import imageio
 from featureextractor import *
 #from tensorflow.keras.preprocessing.image import array_to_img
@@ -229,6 +230,10 @@ try:
   # Overall content weight (alpha) and style weight (beta).
   alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
+
+  # This line destroys the current TensorFlow graph preventing new layer names being generated for 
+  # Inception_V3 model layers.
+  tf.keras.backend.clear_session()
 
   # Instantiate the VGG network.
   vgg = load_model(model_name)
