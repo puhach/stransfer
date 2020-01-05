@@ -16,6 +16,10 @@ def load_model(name, weights='imagenet'):
     model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
   elif name.lower() == "densenet":
     model = tf.keras.applications.DenseNet121(include_top=False, weights='imagenet')
+  elif name.lower() == "resnet":
+    model = tf.keras.applications.ResNet50(include_top=False, weights='imagenet')
+  elif name.lower() == "resnet_v2":
+    model = tf.keras.applications.ResNet50V2(include_top=False, weights='imagenet')
   else:
     raise Exception(f'Model "{name}" is not supported.')
 

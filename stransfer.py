@@ -39,6 +39,10 @@ def preprocess_image(image, model_name):
     return tf.keras.applications.nasnet.preprocess_input(image)
   elif model_name.lower() == "densenet":
     return tf.keras.applications.densenet.preprocess_input(image)
+  elif model_name.lower() == "resnet":
+    return tf.keras.applications.resnet.preprocess_input(image)
+  elif model_name.lower() == "resnet_v2":
+    return tf.keras.applications.resnet_v2.preprocess_input(image)
   else:
     raise Exception(f'Model "{model_name}" is not supported')
 
@@ -158,7 +162,6 @@ def style_transfer_step(output_image, model_name, content_layer_weights, style_l
 
   # Calculate loss gradients
   grads = tape.gradient(total_loss, output_image)  
-  #del tape
 
   # Apply the gradients to alter the output image 
   optimizer.apply_gradients([(grads, output_image)])
@@ -210,8 +213,10 @@ try:
   steps = st.sidebar.number_input(label='Steps', min_value=1, max_value=10000, value=20, step=1)
 
   # Choose the model.
-  model_name = st.sidebar.selectbox(label='Model', options=['VGG16', 'VGG19', 'Inception_V3', 'DenseNet'], index=0)
-  #model_name = 'Inception_V3'
+  model_name = st.sidebar.selectbox(label='Model', 
+    options=['VGG16', 'VGG19', 'Inception_V3', 'DenseNet', 'ResNet', 'ResNet_V2'], 
+    index=0)
+  
 
   # Specify the resolution the input images should be resized to before they are passed to VGG network.
   size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
