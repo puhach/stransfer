@@ -1,11 +1,8 @@
 import tensorflow as tf
 import tensorflow_hub as hub
-# TODO: later use VGG19 and, probably, Resnet, Inception etc
-from tensorflow.keras.applications import VGG16, VGG19
 import tensorflow.keras.backend
 import imageio
 from featureextractor import *
-#from tensorflow.keras.preprocessing.image import array_to_img
 import numpy as np
 import random
 import streamlit as st
@@ -419,10 +416,6 @@ try:
     f"At least one content layer and one style layer must have a positive weight."
 
 
-
-  # TODO: Consider wrapping TensorFlow stuff into a function to release memory:
-  # https://stackoverflow.com/questions/39758094/clearing-tensorflow-gpu-memory-after-model-execution
-
   
   # TODO: add a slider to tweak the optimizer
   #optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
@@ -435,14 +428,6 @@ try:
   progress_bar = st.progress(0)
   output_image_placeholder = st.empty()
 
-  # TODO: perhaps, it makes sense to create a StyleTransfer class, e.g.:
-  # StyleTransfer style_transfer(content_img, style_img, model_name)
-  # conv_layers = style_transfer.get_conv_layers()
-  # ... get layers weights ...
-  # for output_image in style_transfer(steps, content_layer_weights, style_layer_weights, alpha, beta, optimizer)
-  #   ... print step ...
-  #   ... show intermediate image ...
-  
   for step, output_image in style_transfer(content_img, style_img, steps, size, 
                                           content_layer_weights, style_layer_weights, 
                                           alpha, beta, optimizer):
