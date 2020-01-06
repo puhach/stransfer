@@ -22,7 +22,6 @@ class StyleTransfer:
 
   def __init__(self, model_name):
 
-
     # This line destroys the current TensorFlow graph preventing new layer names being generated for 
     # Inception_V3 model layers.
     tf.keras.backend.clear_session()
@@ -71,6 +70,7 @@ class StyleTransfer:
     self.beta = beta
     self.content_layer_weights = content_layer_weights
     self.style_layer_weights = style_layer_weights
+    self.optimizer = optimizer
 
     # Resize the images and add the batch dimension.
     content_resized = StyleTransfer.adjust_shape(content_img, (size, size))
@@ -112,15 +112,14 @@ class StyleTransfer:
     # where trainable=True is default in both cases) are automatically watched. Tensors can be manually watched 
     # by invoking the watch method on the GradientTape context manager.
     #output_image = tf.Variable(content_resized / 255.0)
-    self.output_image = tf.Variable(content_resized)
-    #print(output_image.numpy().min(), output_image.numpy().max())
+    output_image = tf.Variable(content_resized)
 
     for step in range(1, steps+1):
       
-      self.style_transfer_step(optimizer)
+      self.__step(output_image)
 
       #output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='gaussian')
-      output_image_resized = tf.image.resize(self.output_image[0], size=content_img.shape[:2], method='bilinear')
+      output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='bilinear')
       #output_img_array = np.array(output_image*255, np.uint8)
       #output_img_array = np.array(output_image.value(), np.uint8)
       output_img_array = np.array(output_image_resized, np.uint8)
@@ -134,7 +133,7 @@ class StyleTransfer:
   # https://www.tensorflow.org/guide/function
   # Later it can be a part of StyleTransfer class.
   @tf.function  
-  def style_transfer_step(self, optimizer):
+  def __step(self, output_image):
     
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
@@ -142,7 +141,7 @@ class StyleTransfer:
       # Inception models seem to fail to preprocess images as passed in as variables,
       # therefore value() method is used.
       #output_prep = preprocess_image(output_image, model_name)
-      output_prep = StyleTransfer.preprocess_image(self.output_image.value(), model_name)
+      output_prep = StyleTransfer.preprocess_image(output_image.value(), model_name)
       #output_prep = preprocess_image(output_image*255)
 
       # Extract content and style features from the output image.
@@ -170,14 +169,14 @@ class StyleTransfer:
       total_loss = alpha*content_loss + beta * style_loss
 
     # Calculate loss gradients
-    grads = tape.gradient(total_loss, self.output_image)  
+    grads = tape.gradient(total_loss, output_image)  
 
     # Apply the gradients to alter the output image 
-    optimizer.apply_gradients([(grads, self.output_image)])
+    optimizer.apply_gradients([(grads, output_image)])
 
     # Keep the pixel values between 0 and 255
     #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
-    self.output_image.assign(tf.clip_by_value(self.output_image, clip_value_min=0.0, clip_value_max=255.0))
+    output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
 
 
   @staticmethod
