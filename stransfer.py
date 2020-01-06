@@ -21,30 +21,248 @@ print("TensorFlow Hub version:", hub.__version__)
 
 
 
-def adjust_shape(image, size):  
-  image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
-  image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
-  return image_prep
+class StyleTransfer:
+
+  def __init__(self, model_name):
 
 
-def preprocess_image(image, model_name):
+    # This line destroys the current TensorFlow graph preventing new layer names being generated for 
+    # Inception_V3 model layers.
+    tf.keras.backend.clear_session()
+
+    # Instantiate the neural network.
+    if model_name is not None:
+      self.load_model(model_name)
+
   
-  if model_name.lower() == "vgg16":
-    return tf.keras.applications.vgg16.preprocess_input(image)
-  elif model_name.lower() == "vgg19":
-    return tf.keras.applications.vgg19.preprocess_input(image)
-  elif model_name.lower() == "inception_v3":
-    return tf.keras.applications.inception_v3.preprocess_input(image)
-  elif model_name.lower() == "nasnet":
-    return tf.keras.applications.nasnet.preprocess_input(image)
-  elif model_name.lower() == "densenet":
-    return tf.keras.applications.densenet.preprocess_input(image)
-  elif model_name.lower() == "resnet":
-    return tf.keras.applications.resnet.preprocess_input(image)
-  elif model_name.lower() == "resnet_v2":
-    return tf.keras.applications.resnet_v2.preprocess_input(image)
-  else:
-    raise Exception(f'Model "{model_name}" is not supported')
+  def load_model(self, name, weights='imagenet'):
+    if name.lower() == "vgg16":
+      self.model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
+    elif name.lower() == "vgg19":
+      self.model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+    elif name.lower() == "inception_v3":
+      self.model = tf.keras.applications.InceptionV3(include_top=False, weights='imagenet')
+    elif name.lower() == "nasnet":
+      self.model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
+    elif name.lower() == "densenet":
+      self.model = tf.keras.applications.DenseNet121(include_top=False, weights='imagenet')
+    elif name.lower() == "resnet":
+      self.model = tf.keras.applications.ResNet50(include_top=False, weights='imagenet')
+    elif name.lower() == "resnet_v2":
+      self.model = tf.keras.applications.ResNet50V2(include_top=False, weights='imagenet')
+    else:
+      raise Exception(f'Model "{name}" is not supported.')
+
+    self.model.trainable = False
+    self.model_name = name
+
+    # Extract convolutional layers from the model
+    self.conv_layers = [layer.name for layer in self.model.layers if isinstance(layer, tf.keras.layers.Conv2D)]
+
+    return self.model, self.conv_layers
+
+
+  def get_conv_layers(self):
+    return self.conv_layers
+
+
+  def __call__(self, content_img, style_img, 
+              steps, size, content_layer_weights, style_layer_weights, 
+              alpha, beta, optimizer):
+    
+    self.alpha = alpha
+    self.beta = beta
+    self.content_layer_weights = content_layer_weights
+    self.style_layer_weights = style_layer_weights
+
+    # Resize the images and add the batch dimension.
+    content_resized = StyleTransfer.adjust_shape(content_img, (size, size))
+    style_resized = StyleTransfer.adjust_shape(style_img, (size, size))
+
+    # Preprocess the images.    
+    content_prep = StyleTransfer.preprocess_image(content_resized, self.model_name)
+    style_prep = StyleTransfer.preprocess_image(style_resized, self.model_name) 
+
+
+    # Content and style layers with non-zero weight comprise the layers of interest,
+    # which we use to get the intermediate model outputs from.
+
+    layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
+
+    # Create feature extractor.
+    #feature_extractor = create_feature_extractor(vgg, layers_of_interest)
+    outputs = {layer_name : self.model.get_layer(layer_name).output for layer_name in layers_of_interest}
+    self.feature_extractor = tf.keras.Model(self.model.inputs, outputs)
+
+
+    # Get content and style features only once before training.
+    # Not sure whether tf.constant() is important here.
+    input_content_features = self.feature_extractor(tf.constant(content_prep))
+    input_style_features = self.feature_extractor(tf.constant(style_prep))
+
+
+    # Map content layers to the features extracted from these layers.
+    self.content_targets = StyleTransfer.build_content_layer_map(input_content_features, content_layer_weights.keys())
+
+    # Map style layers to the gram matrices calculated for each layer of our style representation.
+    self.style_targets = StyleTransfer.build_style_layer_map(input_style_features, style_layer_weights.keys())
+    
+
+    # Create a third output image and prepare it for change.
+    # To make this quick, start off with a copy of our content image, then iteratively change its style.
+    # For TF docs: GradientTape records operations if they are executed within its context manager and at least one
+    # of their inputs is being "watched". Trainable variables (created by tf.Variable or tf.compat.v1.get_variable, 
+    # where trainable=True is default in both cases) are automatically watched. Tensors can be manually watched 
+    # by invoking the watch method on the GradientTape context manager.
+    #output_image = tf.Variable(content_resized / 255.0)
+    self.output_image = tf.Variable(content_resized)
+    #print(output_image.numpy().min(), output_image.numpy().max())
+
+    for step in range(1, steps+1):
+      
+      self.style_transfer_step(optimizer)
+
+      #output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='gaussian')
+      output_image_resized = tf.image.resize(self.output_image[0], size=content_img.shape[:2], method='bilinear')
+      #output_img_array = np.array(output_image*255, np.uint8)
+      #output_img_array = np.array(output_image.value(), np.uint8)
+      output_img_array = np.array(output_image_resized, np.uint8)
+      
+      yield step, output_img_array
+
+
+  # According to TF docs, when a function is decorated with tf.function, it can be called like any other function, 
+  # but it will be compiled into a graph, which means we get the benefits of faster execution, running on GPU or TPU, 
+  # or exporting to SavedModel.
+  # https://www.tensorflow.org/guide/function
+  # Later it can be a part of StyleTransfer class.
+  @tf.function  
+  def style_transfer_step(self, optimizer):
+    
+    with tf.GradientTape() as tape: # Record operations for automatic differentiation
+
+      # Preprocess the output image before we pass it to the model.
+      # Inception models seem to fail to preprocess images as passed in as variables,
+      # therefore value() method is used.
+      #output_prep = preprocess_image(output_image, model_name)
+      output_prep = StyleTransfer.preprocess_image(self.output_image.value(), model_name)
+      #output_prep = preprocess_image(output_image*255)
+
+      # Extract content and style features from the output image.
+      output_features = self.feature_extractor(output_prep)
+      #output_features = feature_extractor(output_image)
+      output_content_map = StyleTransfer.build_content_layer_map(output_features, content_layer_weights.keys())
+      output_style_map = StyleTransfer.build_style_layer_map(output_features, style_layer_weights.keys())
+
+
+      # Calculate the content loss
+      content_loss = tf.add_n([content_layer_weight * tf.reduce_mean(
+                              (output_content_map[content_layer_name] - self.content_targets[content_layer_name])**2) 
+                              for content_layer_name, content_layer_weight in self.content_layer_weights.items()
+                              if content_layer_weight > 0 ]) 
+
+      # Calculate the style loss
+      style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
+                            (output_style_map[style_layer_name] - self.style_targets[style_layer_name])**2 ) 
+                            for style_layer_name, style_layer_weight in self.style_layer_weights.items()
+                            if style_layer_weight > 0]) 
+
+      # TODO: try to use the total variation loss to reduce high frequency artifacts
+
+      # Add up the content and style losses
+      total_loss = alpha*content_loss + beta * style_loss
+
+    # Calculate loss gradients
+    grads = tape.gradient(total_loss, self.output_image)  
+
+    # Apply the gradients to alter the output image 
+    optimizer.apply_gradients([(grads, self.output_image)])
+
+    # Keep the pixel values between 0 and 255
+    #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
+    self.output_image.assign(tf.clip_by_value(self.output_image, clip_value_min=0.0, clip_value_max=255.0))
+
+
+  @staticmethod
+  def adjust_shape(image, size):  
+    image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
+    image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
+    return image_prep
+
+  
+  @staticmethod
+  def preprocess_image(image, model_name):
+    
+    if model_name.lower() == "vgg16":
+      return tf.keras.applications.vgg16.preprocess_input(image)
+    elif model_name.lower() == "vgg19":
+      return tf.keras.applications.vgg19.preprocess_input(image)
+    elif model_name.lower() == "inception_v3":
+      return tf.keras.applications.inception_v3.preprocess_input(image)
+    elif model_name.lower() == "nasnet":
+      return tf.keras.applications.nasnet.preprocess_input(image)
+    elif model_name.lower() == "densenet":
+      return tf.keras.applications.densenet.preprocess_input(image)
+    elif model_name.lower() == "resnet":
+      return tf.keras.applications.resnet.preprocess_input(image)
+    elif model_name.lower() == "resnet_v2":
+      return tf.keras.applications.resnet_v2.preprocess_input(image)
+    else:
+      raise Exception(f'Model "{model_name}" is not supported')
+
+
+  # @staticmethod decorator doesn't seem to make a big difference, unless we want to call this method on an instance.
+  # Without a decorator it also produces a pylint warning.
+  @staticmethod
+  def compute_gram_matrix(layer_features):
+
+    # Get the batch_size, depth, height, and width of the Tensor
+    b, h, w, d = layer_features.shape
+
+    assert b==1, "The function expects features extracted from a single image."
+
+    # Reshape so we're multiplying the features for each channel
+    tensor = tf.reshape(layer_features, [h*w, d])
+    
+    # Calculate the gram matrix
+    gram = tf.matmul(tensor, tensor, transpose_a=True)
+
+    return gram
+
+  @staticmethod
+  def build_content_layer_map(features, content_layers):
+    
+    # TODO: describe expected features shape: (1, H, W, C) ?
+
+    #content_map = { layer_name : layer_feats for 
+    #                layer_name, layer_feats in 
+    #                zip(content_layers, features[:len(content_layers)]) }
+
+    content_map = { layer_name : features[layer_name] for layer_name in content_layers }
+    #content_map = dict(filter(lambda f: f[0] in content_layers, features))
+
+    return content_map
+
+  @staticmethod
+  def build_style_layer_map(features, style_layers):
+    
+    # TODO: describe expected features shape: (1, H, W, C) ?
+
+    # Each layer's Gram matrix is divided by height*width of the feature map. It makes easier to calculate 
+    # the style loss afterwards:
+    # https://github.com/udacity/deep-learning-v2-pytorch/issues/174
+    
+    gram_norm = lambda f: StyleTransfer.compute_gram_matrix(f) / (f.shape[1]*f.shape[2])
+    style_map = { layer_name : gram_norm(features[layer_name])
+                  for layer_name in style_layers
+                }
+                
+    #style_map = { layer_name: compute_gram_matrix(layer_feats)/(layer_feats.shape[1]*layer_feats.shape[2]) for 
+    #              layer_name, layer_feats in zip(style_layers, features[len(features)-len(style_layers):])} 
+
+    return style_map
+
+
 
 
 
@@ -118,57 +336,6 @@ def get_layer_weights(conv_layers, chosen_layers, layer_type):
   return layer_weights
 
 
-# According to TF docs, when a function is decorated with tf.function, it can be called like any other function, 
-# but it will be compiled into a graph, which means we get the benefits of faster execution, running on GPU or TPU, 
-# or exporting to SavedModel.
-# https://www.tensorflow.org/guide/function
-# Later it can be a part of StyleTransfer class.
-@tf.function 
-def style_transfer_step(output_image, model_name, content_layer_weights, style_layer_weights, 
-  content_targets, style_targets, alpha, beta):
-  
-  with tf.GradientTape() as tape: # Record operations for automatic differentiation
-
-    # Preprocess the output image before we pass it to the model.
-    # Inception models seem to fail to preprocess images as passed in as variables,
-    # therefore value() method is used.
-    #output_prep = preprocess_image(output_image, model_name)
-    output_prep = preprocess_image(output_image.value(), model_name)
-    #output_prep = preprocess_image(output_image*255)
-
-    # Extract content and style features from the output image.
-    output_features = feature_extractor(output_prep)
-    #output_features = feature_extractor(output_image)
-    output_content_map = build_content_layer_map(output_features, content_layer_weights.keys())
-    output_style_map = build_style_layer_map(output_features, style_layer_weights.keys())
-
-
-    # Calculate the content loss
-    content_loss = tf.add_n([content_layer_weight * tf.reduce_mean(
-                            (output_content_map[content_layer_name] - content_targets[content_layer_name])**2) 
-                            for content_layer_name, content_layer_weight in content_layer_weights.items()
-                            if content_layer_weight > 0 ]) 
-
-    # Calculate the style loss
-    style_loss = tf.add_n([style_layer_weight * tf.reduce_mean(
-                          (output_style_map[style_layer_name] - style_targets[style_layer_name])**2 ) 
-                          for style_layer_name, style_layer_weight in style_layer_weights.items()
-                          if style_layer_weight > 0]) 
-
-    # TODO: try to use the total variation loss to reduce high frequency artifacts
-
-    # Add up the content and style losses
-    total_loss = alpha*content_loss + beta * style_loss
-
-  # Calculate loss gradients
-  grads = tape.gradient(total_loss, output_image)  
-
-  # Apply the gradients to alter the output image 
-  optimizer.apply_gradients([(grads, output_image)])
-
-  # Keep the pixel values between 0 and 255
-  #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
-  output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
 
 
 
@@ -223,38 +390,24 @@ try:
                             step=1, format='%d')
   
 
-  # Resize the images and add the batch dimension.
-  content_resized = adjust_shape(content_img, (size, size))
-  style_resized = adjust_shape(style_img, (size, size))
 
-  # Preprocess the images.
-  content_prep = preprocess_image(content_resized, model_name)
-  style_prep = preprocess_image(style_resized, model_name) 
 
   # TODO: not sure if they make any tangible difference. Probably, they can be removed.
   # Overall content weight (alpha) and style weight (beta).
   alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
 
-  # This line destroys the current TensorFlow graph preventing new layer names being generated for 
-  # Inception_V3 model layers.
-  tf.keras.backend.clear_session()
 
-  # Instantiate the VGG network.
-  vgg = load_model(model_name)
-
+  style_transfer = StyleTransfer(model_name)
 
   # Extract convolutional layers from the model
-
-  conv_layers = extract_conv_layers(vgg)
-
+  conv_layers = style_transfer.get_conv_layers()
   assert len(conv_layers) > 0, "The model has no convolutional layers."
 
 
-  # Set weights for each content layer
+  # Set weights for each content layer.
   
   st.sidebar.subheader("Content layer weights")
-  #content_layer_weights = get_layer_weights(conv_layers, conv_layers[:1], 'content')
   content_layer_weights = get_layer_weights(conv_layers, conv_layers[-1:], 'content')
 
   # Set weights for each style layer. Weighting earlier layers more will result in larger style artifacts.
@@ -266,41 +419,11 @@ try:
     f"At least one content layer and one style layer must have a positive weight."
 
 
-  # Content and style layers with non-zero weight comprise the layers of interest,
-  # which we use to get the intermediate model outputs from.
-
-  layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
-
-  feature_extractor = create_feature_extractor(vgg, layers_of_interest)
-
-
-  # Get content and style features only once before training.
-  # Not sure whether tf.constant() is important here.
-  input_content_features = feature_extractor(tf.constant(content_prep))
-  input_style_features = feature_extractor(tf.constant(style_prep))
-
-
-  # Map content layers to the features extracted from these layers.
-  content_targets = build_content_layer_map(input_content_features, content_layer_weights.keys())
-
-  # Map style layers to the gram matrices calculated for each layer of our style representation.
-  style_targets = build_style_layer_map(input_style_features, style_layer_weights.keys())
-  
-
 
   # TODO: Consider wrapping TensorFlow stuff into a function to release memory:
   # https://stackoverflow.com/questions/39758094/clearing-tensorflow-gpu-memory-after-model-execution
 
-  # Create a third output image and prepare it for change.
-  # To make this quick, start off with a copy of our content image, then iteratively change its style.
-  # For TF docs: GradientTape records operations if they are executed within its context manager and at least one
-  # of their inputs is being "watched". Trainable variables (created by tf.Variable or tf.compat.v1.get_variable, 
-  # where trainable=True is default in both cases) are automatically watched. Tensors can be manually watched 
-  # by invoking the watch method on the GradientTape context manager.
-  #output_image = tf.Variable(content_resized / 255.0)
-  output_image = tf.Variable(content_resized)
-  #print(output_image.numpy().min(), output_image.numpy().max())
-
+  
   # TODO: add a slider to tweak the optimizer
   #optimizer = tf.optimizers.Adam(learning_rate=0.02, beta_1=0.99, epsilon=1e-1)
   optimizer = tf.optimizers.Adam(learning_rate=0.8)
@@ -320,28 +443,15 @@ try:
   #   ... print step ...
   #   ... show intermediate image ...
   
-  for step in range(1, steps+1):
-
+  for step, output_image in style_transfer(content_img, style_img, steps, size, 
+                                          content_layer_weights, style_layer_weights, 
+                                          alpha, beta, optimizer):
     # Report progress
     progress_text.text(f"Step {step}/{steps}")
     progress_bar.progress(step/steps)
     print(f"Step {step}")
 
-    style_transfer_step(output_image, model_name, content_layer_weights, style_layer_weights, 
-      content_targets, style_targets, alpha, beta)
-
-    #print("new")
-    #print(output_image)
-
-    ## Show currently obtained image
-    #print(output_image.numpy().max())
-    
-    #output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='gaussian')
-    output_image_resized = tf.image.resize(output_image[0], size=content_img.shape[:2], method='bilinear')
-    #output_img_array = np.array(output_image*255, np.uint8)
-    #output_img_array = np.array(output_image.value(), np.uint8)
-    output_img_array = np.array(output_image_resized, np.uint8)
-    output_image_placeholder.image(output_img_array, caption='Output image', use_column_width=True, clamp=True, channels='RGB')
+    output_image_placeholder.image(output_image, caption='Output image', use_column_width=True, clamp=True, channels='RGB')
     
   progress_text.text("Done!")
   progress_bar.empty()
