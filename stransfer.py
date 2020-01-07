@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow.keras.backend
 import imageio
-from featureextractor import *
+#from featureextractor import *
 import numpy as np
 import random
 import streamlit as st
@@ -32,6 +32,7 @@ class StyleTransfer:
 
   
   def load_model(self, name, weights='imagenet'):
+    # TODO: set up functions for image preprocessing
     if name.lower() == "vgg16":
       self.model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
     elif name.lower() == "vgg19":
@@ -188,7 +189,7 @@ class StyleTransfer:
   
   @staticmethod
   def preprocess_image(image, model_name):
-    
+    # TODO: set appropriate preprocessing functions when loading the model and use them instead
     if model_name.lower() == "vgg16":
       return tf.keras.applications.vgg16.preprocess_input(image)
     elif model_name.lower() == "vgg19":
