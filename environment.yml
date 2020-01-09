@@ -8,6 +8,7 @@ dependencies:
   - python=3.7.5
   - intel::tensorflow=2.0.0
   - pip:
+    - imageio==2.6.1
     - pathtools==0.1.2
     - streamlit==0.51.0
 
