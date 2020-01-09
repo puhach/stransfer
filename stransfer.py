@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow_hub as hub
+#import tensorflow_hub as hub
 import tensorflow.keras.backend
 import imageio
 #from featureextractor import *
@@ -13,7 +13,7 @@ import os
 import traceback 
 
 print("TensorFlow version:", tf.__version__)
-print("TensorFlow Hub version:", hub.__version__)
+#print("TensorFlow Hub version:", hub.__version__)
 
 
 
