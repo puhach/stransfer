@@ -69,6 +69,7 @@ class StyleTransfer:
     
     self.alpha = alpha
     self.beta = beta
+    self.total_variation_weight = 30  # TODO: use streamlit to control this weight
     self.content_layer_weights = content_layer_weights
     self.style_layer_weights = style_layer_weights
     self.optimizer = optimizer
@@ -133,7 +134,7 @@ class StyleTransfer:
   # or exporting to SavedModel.
   # https://www.tensorflow.org/guide/function
   # Later it can be a part of StyleTransfer class.
-  @tf.function  
+  #@tf.function  #TEST!
   def __step(self, output_image):
     
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
@@ -164,10 +165,23 @@ class StyleTransfer:
                             for style_layer_name, style_layer_weight in self.style_layer_weights.items()
                             if style_layer_weight > 0]) 
 
-      # TODO: try to use the total variation loss to reduce high frequency artifacts
+      
+      # Use the total variation loss to reduce high frequency artifacts
+      if self.total_variation_weight > 0:
 
-      # Add up the content and style losses
-      total_loss = alpha*content_loss + beta * style_loss
+        # Find horizontal and vertical variations and try to minimize them
+        # (output_image has a format of [B, H, W, C])
+        x_var = output_image[:, :, 1:, :] - output_image[:, :, 0:-1, :]
+        y_var = output_image[:, 1:, :, :] - output_image[:, 0:-1, :, :]
+
+        variation_loss = tf.reduce_sum(tf.abs(x_var)) + tf.reduce_sum(tf.abs(y_var))
+      else:
+        variation_loss = 0
+
+        
+      # Add up the content, style, and variation losses
+      total_loss = self.alpha*content_loss + self.beta*style_loss + self.total_variation_weight*variation_loss
+      
 
     # Calculate loss gradients
     grads = tape.gradient(total_loss, output_image)  
