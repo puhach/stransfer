@@ -134,7 +134,7 @@ class StyleTransfer:
   # or exporting to SavedModel.
   # https://www.tensorflow.org/guide/function
   # Later it can be a part of StyleTransfer class.
-  #@tf.function  #TEST!
+  @tf.function 
   def __step(self, output_image):
     
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
@@ -165,7 +165,9 @@ class StyleTransfer:
                             for style_layer_name, style_layer_weight in self.style_layer_weights.items()
                             if style_layer_weight > 0]) 
 
-      
+      # Add up the content and style losses
+      total_loss = self.alpha*content_loss + self.beta*style_loss 
+
       # Use the total variation loss to reduce high frequency artifacts
       if self.total_variation_weight > 0:
 
@@ -175,13 +177,9 @@ class StyleTransfer:
         y_var = output_image[:, 1:, :, :] - output_image[:, 0:-1, :, :]
 
         variation_loss = tf.reduce_sum(tf.abs(x_var)) + tf.reduce_sum(tf.abs(y_var))
-      else:
-        variation_loss = 0
 
+        total_loss += self.total_variation_weight * variation_loss
         
-      # Add up the content, style, and variation losses
-      total_loss = self.alpha*content_loss + self.beta*style_loss + self.total_variation_weight*variation_loss
-      
 
     # Calculate loss gradients
     grads = tape.gradient(total_loss, output_image)  
@@ -192,6 +190,7 @@ class StyleTransfer:
     # Keep the pixel values between 0 and 255
     #output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=1.0))
     output_image.assign(tf.clip_by_value(output_image, clip_value_min=0.0, clip_value_max=255.0))
+
 
 
   @staticmethod
