@@ -32,21 +32,28 @@ class StyleTransfer:
 
   
   def load_model(self, name, weights='imagenet'):
-    # TODO: set up functions for image preprocessing
+    # load a pretrained model and set up the image preprocessing function
     if name.lower() == "vgg16":
       self.model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.vgg16.preprocess_input
     elif name.lower() == "vgg19":
       self.model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.vgg19.preprocess_input
     elif name.lower() == "inception_v3":
       self.model = tf.keras.applications.InceptionV3(include_top=False, weights='imagenet')
-    elif name.lower() == "nasnet":
+      self.preprocess_image = tf.keras.applications.inception_v3.preprocess_input
+    elif name.lower() == "nasnet": # TODO: I think, NAS should be removed
       self.model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.nasnet.preprocess_input
     elif name.lower() == "densenet":
       self.model = tf.keras.applications.DenseNet121(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.densenet.preprocess_input
     elif name.lower() == "resnet":
       self.model = tf.keras.applications.ResNet50(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.resnet.preprocess_input
     elif name.lower() == "resnet_v2":
       self.model = tf.keras.applications.ResNet50V2(include_top=False, weights='imagenet')
+      self.preprocess_image = tf.keras.applications.resnet_v2.preprocess_input
     else:
       raise Exception(f'Model "{name}" is not supported.')
 
@@ -79,8 +86,10 @@ class StyleTransfer:
     style_resized = StyleTransfer.adjust_shape(style_img, (size, size))
 
     # Preprocess the images.    
-    content_prep = StyleTransfer.preprocess_image(content_resized, self.model_name)
-    style_prep = StyleTransfer.preprocess_image(style_resized, self.model_name) 
+    content_prep = self.preprocess_image(content_resized)
+    style_prep = self.preprocess_image(style_resized)
+    #content_prep = StyleTransfer.preprocess_image(content_resized, self.model_name)
+    #style_prep = StyleTransfer.preprocess_image(style_resized, self.model_name) 
 
 
     # Content and style layers with non-zero weight comprise the layers of interest,
@@ -143,7 +152,8 @@ class StyleTransfer:
       # Inception models seem to fail to preprocess images as passed in as variables,
       # therefore value() method is used.
       #output_prep = preprocess_image(output_image, model_name)
-      output_prep = StyleTransfer.preprocess_image(output_image.value(), model_name)
+      #output_prep = StyleTransfer.preprocess_image(output_image.value(), model_name)
+      output_prep = self.preprocess_image(output_image.value())
       #output_prep = preprocess_image(output_image*255)
 
       # Extract content and style features from the output image.
@@ -200,27 +210,6 @@ class StyleTransfer:
     return image_prep
 
   
-  @staticmethod
-  def preprocess_image(image, model_name):
-    # TODO: set appropriate preprocessing functions when loading the model and use them instead
-    if model_name.lower() == "vgg16":
-      return tf.keras.applications.vgg16.preprocess_input(image)
-    elif model_name.lower() == "vgg19":
-      return tf.keras.applications.vgg19.preprocess_input(image)
-    elif model_name.lower() == "inception_v3":
-      return tf.keras.applications.inception_v3.preprocess_input(image)
-    elif model_name.lower() == "nasnet":
-      return tf.keras.applications.nasnet.preprocess_input(image)
-    elif model_name.lower() == "densenet":
-      return tf.keras.applications.densenet.preprocess_input(image)
-    elif model_name.lower() == "resnet":
-      return tf.keras.applications.resnet.preprocess_input(image)
-    elif model_name.lower() == "resnet_v2":
-      return tf.keras.applications.resnet_v2.preprocess_input(image)
-    else:
-      raise Exception(f'Model "{model_name}" is not supported')
-
-
   # @staticmethod decorator doesn't seem to make a big difference, unless we want to call this method on an instance.
   # Without a decorator it also produces a pylint warning.
   @staticmethod
