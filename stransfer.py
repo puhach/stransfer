@@ -70,13 +70,14 @@ class StyleTransfer:
     return self.conv_layers
 
 
+  # TODO: probably, rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   def __call__(self, content_img, style_img, 
               steps, size, content_layer_weights, style_layer_weights, 
-              alpha, beta, optimizer):
+              alpha, beta, total_variation_weight, optimizer):
     
     self.alpha = alpha
     self.beta = beta
-    self.total_variation_weight = 30  # TODO: use streamlit to control this weight
+    self.total_variation_weight = total_variation_weight
     self.content_layer_weights = content_layer_weights
     self.style_layer_weights = style_layer_weights
     self.optimizer = optimizer
@@ -396,6 +397,9 @@ try:
   alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
 
+  # A regularization term on the high frequency components of the image
+  total_variation_weight = st.sidebar.slider(label='Total variation weight', min_value=0, max_value=100, value=12)
+
 
   style_transfer = StyleTransfer(model_name)
 
@@ -432,7 +436,7 @@ try:
 
   for step, output_image in style_transfer(content_img, style_img, steps, size, 
                                           content_layer_weights, style_layer_weights, 
-                                          alpha, beta, optimizer):
+                                          alpha, beta, total_variation_weight, optimizer):
     # Report progress
     progress_text.text(f"Step {step}/{steps}")
     progress_bar.progress(step/steps)
