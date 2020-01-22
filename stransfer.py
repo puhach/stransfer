@@ -73,9 +73,9 @@ class StyleTransfer:
   # TODO: probably, rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   def __call__(self, content_img, style_img, 
               steps, size, content_layer_weights, style_layer_weights, 
-              alpha, beta, total_variation_weight, optimizer):
+              content_reconstruction_weight, beta, total_variation_weight, optimizer):
     
-    self.alpha = alpha
+    self.content_reconstruction_weight = content_reconstruction_weight
     self.beta = beta
     self.total_variation_weight = total_variation_weight
     self.content_layer_weights = content_layer_weights
@@ -177,7 +177,7 @@ class StyleTransfer:
                             if style_layer_weight > 0]) 
 
       # Add up the content and style losses
-      total_loss = self.alpha*content_loss + self.beta*style_loss 
+      total_loss = self.content_reconstruction_weight*content_loss + self.beta*style_loss 
 
       # Use the total variation loss to reduce high frequency artifacts
       if self.total_variation_weight > 0:
