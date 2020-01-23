@@ -70,13 +70,12 @@ class StyleTransfer:
     return self.conv_layers
 
 
-  # TODO: probably, rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   def __call__(self, content_img, style_img, 
               steps, size, content_layer_weights, style_layer_weights, 
-              content_reconstruction_weight, beta, total_variation_weight, optimizer):
+              content_reconstruction_weight, style_reconstruction_weight, total_variation_weight, optimizer):
     
     self.content_reconstruction_weight = content_reconstruction_weight
-    self.beta = beta
+    self.style_reconstruction_weight = style_reconstruction_weight
     self.total_variation_weight = total_variation_weight
     self.content_layer_weights = content_layer_weights
     self.style_layer_weights = style_layer_weights
@@ -177,7 +176,7 @@ class StyleTransfer:
                             if style_layer_weight > 0]) 
 
       # Add up the content and style losses
-      total_loss = self.content_reconstruction_weight*content_loss + self.beta*style_loss 
+      total_loss = self.content_reconstruction_weight*content_loss + self.style_reconstruction_weight*style_loss 
 
       # Use the total variation loss to reduce high frequency artifacts
       if self.total_variation_weight > 0:
@@ -392,7 +391,7 @@ try:
 
 
 
-  # TODO: not sure if they make any tangible difference. Probably, they can be removed.
+  # TODO: rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   # Overall content weight (alpha) and style weight (beta).
   alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
