@@ -393,7 +393,7 @@ try:
 
   # TODO: rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   # Overall content weight (alpha) and style weight (beta).
-  alpha = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
+  content_reconstruction_weight = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   beta = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
 
   # A regularization term on the high frequency components of the image
@@ -435,7 +435,7 @@ try:
 
   for step, output_image in style_transfer(content_img, style_img, steps, size, 
                                           content_layer_weights, style_layer_weights, 
-                                          alpha, beta, total_variation_weight, optimizer):
+                                          content_reconstruction_weight, beta, total_variation_weight, optimizer):
     # Report progress
     progress_text.text(f"Step {step}/{steps}")
     progress_bar.progress(step/steps)
