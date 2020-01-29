@@ -57,6 +57,19 @@ Updating the output image involves finding the gradients of the loss with respec
 When output image is updated, we repeat the process passing it through the chosen layers of the model, retrieving its content and style representations, calculating the loss, finding the loss gradients, and altering the image again according to the gradients. We stop after a desired number of steps is taken.
 
 
+# Prerequisites
+
+- Python 3.7
+- TensorFlow 2.0
+- Streamlit 0.51
+- Imageio 2.6
+
+For convenience there is *environment.yml* file which you can create a conda environment from:
+```
+conda env create -f environment.yml
+```
+This will install TensorFlow optimized using Intel Math Kernel Library for Deep Neural Networks (Intel MKL-DNN).
+
 
 # Credits
 
