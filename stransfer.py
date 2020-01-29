@@ -390,8 +390,6 @@ try:
   
 
 
-
-  # TODO: rename alpha and beta to content_reconstruction_weight and style_reconstruction_weight
   # Overall content weight (alpha) and style weight (beta).
   content_reconstruction_weight = st.sidebar.slider(label='Content reconstruction weight (alpha)', min_value=1, max_value=10000, value=1)
   style_reconstruction_weight = st.sidebar.slider(label='Style reconstruction weight (beta)', min_value=1, max_value=10000, value=1000)
