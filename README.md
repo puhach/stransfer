@@ -8,7 +8,7 @@ The project leverages the power of streamlit to present the concept of neural st
 
 
 
-# Algorithm outline
+### Algorithm outline
 
 
 *1. Load content and style images*
