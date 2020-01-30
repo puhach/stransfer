@@ -19,6 +19,7 @@ print("TensorFlow version:", tf.__version__)
 
 
 class StyleTransfer:
+  """ """
 
   def __init__(self, model_name):
 
@@ -32,6 +33,12 @@ class StyleTransfer:
 
   
   def load_model(self, name, weights='imagenet'):
+    """
+
+    :param name: 
+    :param weights:  (Default value = 'imagenet')
+
+    """
     # load a pretrained model and set up the image preprocessing function
     if name.lower() == "vgg16":
       self.model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
@@ -67,6 +74,7 @@ class StyleTransfer:
 
 
   def get_conv_layers(self):
+    """ """
     return self.conv_layers
 
 
@@ -205,6 +213,12 @@ class StyleTransfer:
 
   @staticmethod
   def adjust_shape(image, size):  
+    """
+
+    :param image: 
+    :param size: 
+
+    """
     image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
     image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
     return image_prep
@@ -214,6 +228,11 @@ class StyleTransfer:
   # Without a decorator it also produces a pylint warning.
   @staticmethod
   def compute_gram_matrix(layer_features):
+    """
+
+    :param layer_features: 
+
+    """
 
     # Get the batch_size, depth, height, and width of the Tensor
     b, h, w, d = layer_features.shape
@@ -230,6 +249,12 @@ class StyleTransfer:
 
   @staticmethod
   def build_content_layer_map(features, content_layers):
+    """
+
+    :param features: 
+    :param content_layers: 
+
+    """
     
     # TODO: describe expected features shape: (1, H, W, C) ?
 
@@ -244,6 +269,12 @@ class StyleTransfer:
 
   @staticmethod
   def build_style_layer_map(features, style_layers):
+    """
+
+    :param features: 
+    :param style_layers: 
+
+    """
     
     # TODO: describe expected features shape: (1, H, W, C) ?
 
@@ -266,6 +297,13 @@ class StyleTransfer:
 
 
 def get_layer_weights(conv_layers, chosen_layers, layer_type):
+  """
+
+  :param conv_layers: 
+  :param chosen_layers: 
+  :param layer_type: 
+
+  """
 
   chart_placeholder = st.sidebar.empty()
 
