@@ -19,7 +19,10 @@ print("TensorFlow version:", tf.__version__)
 
 
 class StyleTransfer:
-  """ """
+  """ 
+  Implements neural style transfer. It takes two images and by means of a pretrained model extracts their 
+  features to create a new image combining the content and the style of the input images.
+  """
 
   def __init__(self, model_name):
 
