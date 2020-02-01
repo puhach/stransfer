@@ -43,25 +43,25 @@ class StyleTransfer:
     """
     # load a pretrained model and set up the image preprocessing function
     if name.lower() == "vgg16":
-      self.model = tf.keras.applications.VGG16(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.VGG16(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.vgg16.preprocess_input
     elif name.lower() == "vgg19":
-      self.model = tf.keras.applications.VGG19(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.VGG19(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.vgg19.preprocess_input
     elif name.lower() == "inception_v3":
-      self.model = tf.keras.applications.InceptionV3(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.InceptionV3(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.inception_v3.preprocess_input
     #elif name.lower() == "nasnet": # TODO: I think, NAS should be removed
     #  self.model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
     #  self.preprocess_image = tf.keras.applications.nasnet.preprocess_input
     elif name.lower() == "densenet":
-      self.model = tf.keras.applications.DenseNet121(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.DenseNet121(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.densenet.preprocess_input
     elif name.lower() == "resnet":
-      self.model = tf.keras.applications.ResNet50(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.ResNet50(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.resnet.preprocess_input
     elif name.lower() == "resnet_v2":
-      self.model = tf.keras.applications.ResNet50V2(include_top=False, weights='imagenet')
+      self.model = tf.keras.applications.ResNet50V2(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.resnet_v2.preprocess_input
     else:
       raise Exception(f'Model "{name}" is not supported.')
