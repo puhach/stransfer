@@ -37,10 +37,9 @@ class StyleTransfer:
   
   def load_model(self, name, weights='imagenet'):
     """
-
-    :param name: 
-    :param weights:  (Default value = 'imagenet')
-
+    Loads a pre-trained model to be used for feature extraction.
+    :param name: Name of the model (VGG16, VGG19, Inception_v3, DenseNet, ResNet, ResNet_v2).
+    :param weights: Model weights. Must be 'imagenet' (pre-training on ImageNet) or None (random initialization).
     """
     # load a pretrained model and set up the image preprocessing function
     if name.lower() == "vgg16":
