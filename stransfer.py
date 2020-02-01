@@ -51,9 +51,7 @@ class StyleTransfer:
     elif name.lower() == "inception_v3":
       self.model = tf.keras.applications.InceptionV3(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.inception_v3.preprocess_input
-    #elif name.lower() == "nasnet": # TODO: I think, NAS should be removed
-    #  self.model = tf.keras.applications.NASNetLarge(include_top=False, weights='imagenet')
-    #  self.preprocess_image = tf.keras.applications.nasnet.preprocess_input
+    # TODO: try adding Xception model
     elif name.lower() == "densenet":
       self.model = tf.keras.applications.DenseNet121(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.densenet.preprocess_input
