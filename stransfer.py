@@ -50,8 +50,10 @@ class StyleTransfer:
       self.preprocess_image = tf.keras.applications.vgg19.preprocess_input
     elif name.lower() == "inception_v3":
       self.model = tf.keras.applications.InceptionV3(include_top=False, weights=weights)
-      self.preprocess_image = tf.keras.applications.inception_v3.preprocess_input
-    # TODO: try adding Xception model
+      self.preprocess_image = tf.keras.applications.inception_v3.preprocess_input    
+    elif name.lower() == "xception":
+      self.model = tf.keras.applications.Xception(include_top=False, weights=weights)
+      self.preprocess_image = tf.keras.applications.xception.preprocess_input
     elif name.lower() == "densenet":
       self.model = tf.keras.applications.DenseNet121(include_top=False, weights=weights)
       self.preprocess_image = tf.keras.applications.densenet.preprocess_input
@@ -418,9 +420,9 @@ try:
 
   # Choose the model.
   model_name = st.sidebar.selectbox(label='Model', 
-    options=['VGG16', 'VGG19', 'Inception_V3', 'DenseNet', 'ResNet', 'ResNet_V2'], 
+    options=['VGG16', 'VGG19', 'Inception_V3', 'Xception', 'DenseNet', 'ResNet', 'ResNet_V2'], 
     index=0)
-  
+
 
   # Specify the resolution the input images should be resized to before they are passed to VGG network.
   size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
