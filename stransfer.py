@@ -76,7 +76,9 @@ class StyleTransfer:
 
 
   def get_conv_layers(self):
-    """ """
+    """ 
+    Returns convolutional layers of the model loaded by the load_model() method.
+    """
     return self.conv_layers
 
 
