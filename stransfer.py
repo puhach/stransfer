@@ -85,7 +85,26 @@ class StyleTransfer:
   def __call__(self, content_img, style_img, 
               steps, size, content_layer_weights, style_layer_weights, 
               content_reconstruction_weight, style_reconstruction_weight, total_variation_weight, optimizer):
-    
+    """
+    Takes the content and style images to perform style transfer using the specified number of steps, 
+    content and style weights, image size, and the optimizer.
+    :param content_img: The input image to capture content representation from.
+    :param style_img: The iput image to capture style from.
+    :param steps: The number of steps to perform style transfer for.
+    :param size: The square size to which input images must be resized.
+    :param content_layer_weights: The dictionary with layer names and corresponding weights defining 
+              the importance of a particular layer for content representation of the output image.
+    :param style_layer_weights: The dictionary with layer names and corresponding weights defining
+              how much the resulting image style depends on the output of a particular layer.
+    :param content_reconstruction_weight: The weight factor defining how much content representation 
+              is important as compared to the style.
+    :param style_reconstruction_weight: The weight factor defining how much style is important as
+              compared to the content representation.
+    :param total_variation_weight: The weight factor determining how much to decrease high frequency 
+              artifacts.
+    :param optimizer: The optimizer to perform style transfer optimization.
+    """
+
     self.content_reconstruction_weight = content_reconstruction_weight
     self.style_reconstruction_weight = style_reconstruction_weight
     self.total_variation_weight = total_variation_weight
