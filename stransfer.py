@@ -1,8 +1,5 @@
 import tensorflow as tf
-#import tensorflow_hub as hub
-#import tensorflow.keras.backend
 import imageio
-#from featureextractor import *
 import numpy as np
 import random
 import streamlit as st
