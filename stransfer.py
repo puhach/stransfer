@@ -173,7 +173,11 @@ class StyleTransfer:
   # Later it can be a part of StyleTransfer class.
   @tf.function 
   def __step(self, output_image):
-    
+    """
+    Performs one step of style transfer.
+    :param output_image: The image updated during style transfer optimization.
+    """
+
     with tf.GradientTape() as tape: # Record operations for automatic differentiation
 
       # Preprocess the output image before we pass it to the model.
