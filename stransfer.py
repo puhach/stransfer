@@ -238,10 +238,10 @@ class StyleTransfer:
   @staticmethod
   def adjust_shape(image, size):  
     """
-
-    :param image: 
-    :param size: 
-
+    Adjusts the shape of the image resizing it to the specified size, adding batch dimension,
+    and discarding the alpha channel.
+    :param image: The image which shape needs to be adjusted.
+    :param size: The desired size of the image.
     """
     image_prep = tf.image.resize(image, size=size, method='lanczos5')  # resize appropriately 
     image_prep = image_prep[tf.newaxis, ..., :3]  # add the batch dimension and discard the alpha channel
