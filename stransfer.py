@@ -253,9 +253,8 @@ class StyleTransfer:
   @staticmethod
   def compute_gram_matrix(layer_features):
     """
-
-    :param layer_features: 
-
+    Computes the Gram matrix of the convolutional layer.
+    :param layer_features: The output of the convolutional layer in the "NHWC" format. 
     """
 
     # Get the batch_size, depth, height, and width of the Tensor
