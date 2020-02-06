@@ -292,10 +292,10 @@ class StyleTransfer:
   @staticmethod
   def build_style_layer_map(features, style_layers):
     """
-
-    :param features: 
-    :param style_layers: 
-
+    Maps the specified layer names to Gram matrices of the corresponding layers. Gram matrices are 
+    normalized by height and width of the feature map.
+    :param features: The dictionary containing the outputs of all layers of interest.
+    :param style_layers: The list of style layer names for which Gram matrices need to be computed.
     """
     
     # TODO: describe expected features shape: (1, H, W, C) ?
