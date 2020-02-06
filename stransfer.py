@@ -273,10 +273,9 @@ class StyleTransfer:
   @staticmethod
   def build_content_layer_map(features, content_layers):
     """
-
-    :param features: 
-    :param content_layers: 
-
+    Selects features extracted from the specified content layers and maps them to layer names.    
+    :param features: The dictionary containing the outputs of all layers of interest.
+    :param content_layers: The list of content layer names to be mapped to their corresponding outputs.
     """
     
     # TODO: describe expected features shape: (1, H, W, C) ?
