@@ -290,8 +290,6 @@ class StyleTransfer:
     :param style_layers: The list of style layer names for which Gram matrices need to be computed.
     """
     
-    # TODO: describe expected features shape: (1, H, W, C) ?
-
     # Each layer's Gram matrix is divided by height*width of the feature map. It makes easier to calculate 
     # the style loss afterwards:
     # https://github.com/udacity/deep-learning-v2-pytorch/issues/174
@@ -301,9 +299,6 @@ class StyleTransfer:
                   for layer_name in style_layers
                 }
                 
-    #style_map = { layer_name: compute_gram_matrix(layer_feats)/(layer_feats.shape[1]*layer_feats.shape[2]) for 
-    #              layer_name, layer_feats in zip(style_layers, features[len(features)-len(style_layers):])} 
-
     return style_map
 
 
