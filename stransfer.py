@@ -294,7 +294,8 @@ class StyleTransfer:
     """
     Maps the specified layer names to Gram matrices of the corresponding layers. Gram matrices are 
     normalized by height and width of the feature map.
-    :param features: The dictionary containing the outputs of all layers of interest.
+    :param features: The dictionary containing outputs of all layers of interest. The outputs are 
+              expected to have "NHWC" format.
     :param style_layers: The list of style layer names for which Gram matrices need to be computed.
     """
     
