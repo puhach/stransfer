@@ -276,17 +276,8 @@ class StyleTransfer:
     Selects features extracted from the specified content layers and maps them to layer names.    
     :param features: The dictionary containing the outputs of all layers of interest.
     :param content_layers: The list of content layer names to be mapped to their corresponding outputs.
-    """
-    
-    # TODO: describe expected features shape: (1, H, W, C) ?
-
-    #content_map = { layer_name : layer_feats for 
-    #                layer_name, layer_feats in 
-    #                zip(content_layers, features[:len(content_layers)]) }
-
+    """  
     content_map = { layer_name : features[layer_name] for layer_name in content_layers }
-    #content_map = dict(filter(lambda f: f[0] in content_layers, features))
-
     return content_map
 
   @staticmethod
