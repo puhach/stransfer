@@ -307,11 +307,12 @@ class StyleTransfer:
 
 def get_layer_weights(conv_layers, chosen_layers, layer_type):
   """
-
-  :param conv_layers: 
-  :param chosen_layers: 
-  :param layer_type: 
-
+  Assigns weights to the specified convolutional layers.
+  :param conv_layers: The list of convolutional layers which will be bound to sliders controlling 
+            their weights.
+  :param chosen_layers: The layers which will be initialized to a positive weight. The rest of 
+            the layers will have a zero weight by default. 
+  :param layer_type: The type of layers (must be either 'content' or 'style').
   """
 
   chart_placeholder = st.sidebar.empty()
