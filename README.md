@@ -71,6 +71,21 @@ conda env create -f environment.yml
 This will install TensorFlow optimized using Intel Math Kernel Library for Deep Neural Networks (Intel MKL-DNN).
 
 
+# Usage
+
+The application is fairly simple to use. To start with, choose the **Content image** and the **Style image** from the lists. They show files from the 'data/content' and 'data/style' directories (just in case you want to try your own image).
+
+<div align="center">
+<img src="./assets/octopus_1.jpg">
+</div>
+
+Notice the style transfer is already running. On the right a new image is being created and you can see how it is gradually changing to become closer to the style image. 
+
+There are many options you may tweak:
+
+
+
+
 # Credits
 
 Original paper by Leon A. Gatys, Alexander S. Ecker, and Matthias Bethge [Image Style Transfer Using Convolutional Neural Networks](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Gatys_Image_Style_Transfer_CVPR_2016_paper.pdf).
