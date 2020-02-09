@@ -83,6 +83,11 @@ Notice the style transfer is already running. On the right a new image is being 
 
 There are many options you may tweak:
 
+**Steps** 
+
+The number of times the image should be updated. The larger the value, the stronger the effect of style transfer.
+
+Must be an integer in range from 1 to 10000. Default is 20.
 
 
 
