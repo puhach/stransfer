@@ -110,6 +110,12 @@ The resolution the input images should be resized to before they are passed to t
 Must be in range from 100 to 1000. Default is 500.
 
 
+**Content reconstruction weight (alpha)**
+
+The weight factor defining the significance of the content loss. The larger the value, the more constrained is image content modification.
+
+Must be in range from 1 to 10000. Defaults to 1.
+
 
 
 # Credits
