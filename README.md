@@ -124,6 +124,14 @@ The weight factor defining the significance of the style loss. The larger the va
 Must be in range from 1 to 10000. Defaults to 1000.
 
 
+**Total variation weight**
+
+The weight factor defining the strength of high frequency noise reduction. Larger values result in less high-frequency artifacts.
+
+Must be in range from 1 to 100. Defaults to 12.
+
+
+
 
 # Credits
 
