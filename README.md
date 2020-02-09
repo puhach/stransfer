@@ -103,6 +103,14 @@ The pre-trained model used for feature extraction. Supported models are:
 
 Default is VGG16.
 
+**Intermediate image size**
+
+The resolution the input images should be resized to before they are passed to the pre-trained model of choice.
+
+Must be in range from 100 to 1000. Default is 500.
+
+
+
 
 # Credits
 
