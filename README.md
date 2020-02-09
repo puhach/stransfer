@@ -90,6 +90,19 @@ The number of times the image should be updated. The larger the value, the stron
 Must be an integer in range from 1 to 10000. Default is 20.
 
 
+**Model**
+
+The pre-trained model used for feature extraction. Supported models are: 
+- VGG16
+- VGG19
+- Inception V3
+- Xception 
+- DenseNet
+- ResNet
+- ResNet V2
+
+Default is VGG16.
+
 
 # Credits
 
