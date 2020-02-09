@@ -117,6 +117,13 @@ The weight factor defining the significance of the content loss. The larger the 
 Must be in range from 1 to 10000. Defaults to 1.
 
 
+**Style reconstruction weight (beta)**
+
+The weight factor defining the significance of the style loss. The larger the value, the more effect style image will have on the output image. 
+
+Must be in range from 1 to 10000. Defaults to 1000.
+
+
 
 # Credits
 
