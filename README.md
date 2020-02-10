@@ -131,6 +131,12 @@ The weight factor defining the strength of high frequency noise reduction. Large
 Must be in range from 1 to 100. Defaults to 12.
 
 
+**Content layer weights**
+
+Each layer of the network has a corresponding weight which determines how much it contributes into the content loss. 
+
+The weight must be in range from 0.0 to 1.0. By default, all layers but the last one have zero content weight. The last layer has a weight of 1.0. 
+
 
 
 # Credits
