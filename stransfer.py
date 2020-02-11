@@ -116,8 +116,6 @@ class StyleTransfer:
     # Preprocess the images.    
     content_prep = self.preprocess_image(content_resized)
     style_prep = self.preprocess_image(style_resized)
-    #content_prep = StyleTransfer.preprocess_image(content_resized, self.model_name)
-    #style_prep = StyleTransfer.preprocess_image(style_resized, self.model_name) 
 
 
     # Content and style layers with non-zero weight comprise the layers of interest,
@@ -126,7 +124,6 @@ class StyleTransfer:
     layers_of_interest = list(set(content_layer_weights).union(style_layer_weights))
 
     # Create feature extractor.
-    #feature_extractor = create_feature_extractor(vgg, layers_of_interest)
     outputs = {layer_name : self.model.get_layer(layer_name).output for layer_name in layers_of_interest}
     self.feature_extractor = tf.keras.Model(self.model.inputs, outputs)
 
@@ -432,7 +429,7 @@ try:
     index=0)
 
 
-  # Specify the resolution the input images should be resized to before they are passed to VGG network.
+  # Specify the resolution the input images should be resized to before they are passed to the pre-trained model of choice.
   size = st.sidebar.slider( label='Intermediate image size', min_value=100, max_value=1000, value=500, 
                             step=1, format='%d')
   
@@ -481,7 +478,8 @@ try:
 
   for step, output_image in style_transfer(content_img, style_img, steps, size, 
                                           content_layer_weights, style_layer_weights, 
-                                          content_reconstruction_weight, style_reconstruction_weight, total_variation_weight, optimizer):
+                                          content_reconstruction_weight, style_reconstruction_weight, 
+                                          total_variation_weight, optimizer):
     # Report progress
     progress_text.text(f"Step {step}/{steps}")
     progress_bar.progress(step/steps)
