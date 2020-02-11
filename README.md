@@ -138,6 +138,12 @@ Each layer of the network has a corresponding weight which determines how much i
 The weight must be in range from 0.0 to 1.0. By default, all layers but the last one have zero content weight. The last layer has a weight of 1.0. 
 
 
+**Style layer weights**
+
+Each layer of the network has a corresponding weight which determines how much it contributes into the style loss. 
+
+The weight must be in range from 0.0 to 1.0. By default, the first layer is assigned a style weight of 1. The rest of the layers have zero weight.
+
 
 # Credits
 
