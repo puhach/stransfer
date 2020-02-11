@@ -145,6 +145,11 @@ Each layer of the network has a corresponding weight which determines how much i
 The weight must be in range from 0.0 to 1.0. By default, the first layer is assigned a style weight of 1. The rest of the layers have zero weight.
 
 
+<div align="center">
+<img src="./assets/octopus_2.jpg">
+</div>
+
+
 # Credits
 
 Original paper by Leon A. Gatys, Alexander S. Ecker, and Matthias Bethge [Image Style Transfer Using Convolutional Neural Networks](https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Gatys_Image_Style_Transfer_CVPR_2016_paper.pdf).
