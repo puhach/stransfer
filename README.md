@@ -154,7 +154,7 @@ The weight must be in range from 0.0 to 1.0. By default, the first layer is assi
 
 
 <div align="center">
-<img src="./assets/octopus_2.jpg">
+<img src="./assets/octopus_431.jpg">
 </div>
 
 
