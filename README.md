@@ -70,6 +70,14 @@ conda env create -f environment.yml
 ```
 This will install TensorFlow optimized using Intel Math Kernel Library for Deep Neural Networks (Intel MKL-DNN).
 
+# Launch
+
+Activate your conda environment and run the app by the following command:
+```
+streamlit run stransfer.py
+```
+
+You are likely to experience delays during the first run since pre-trained models have to be downloaded.
 
 # Usage
 
